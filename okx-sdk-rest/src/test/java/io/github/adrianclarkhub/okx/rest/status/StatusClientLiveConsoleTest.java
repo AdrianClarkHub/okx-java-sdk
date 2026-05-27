@@ -2,6 +2,7 @@ package io.github.adrianclarkhub.okx.rest.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
+import io.github.adrianclarkhub.okx.core.exception.OkxNetworkException;
 import io.github.adrianclarkhub.okx.core.exception.OkxRateLimitException;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClient;
 import io.github.adrianclarkhub.okx.rest.status.enums.StatusMaintenanceStateEnum;
@@ -56,6 +57,9 @@ class StatusClientLiveConsoleTest {
             responses = statusClient.getStatus(new StatusRequest(StatusMaintenanceStateEnum.COMPLETED));
         } catch (OkxRateLimitException e) {
             Assumptions.abort("OKX live API rate limited this run: " + e.getMessage());
+            return;
+        } catch (OkxNetworkException e) {
+            Assumptions.abort("OKX live API network unavailable this run: " + e.getMessage());
             return;
         }
 
