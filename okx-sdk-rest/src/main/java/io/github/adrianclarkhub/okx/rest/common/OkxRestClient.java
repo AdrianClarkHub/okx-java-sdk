@@ -1,14 +1,22 @@
 package io.github.adrianclarkhub.okx.rest.common;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.adrianclarkhub.okx.core.auth.OkxAuthHeaders;
+import io.github.adrianclarkhub.okx.core.auth.OkxCredentials;
+import io.github.adrianclarkhub.okx.core.auth.OkxSigner;
+import io.github.adrianclarkhub.okx.core.auth.OkxTimestampProvider;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
+import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
 import io.github.adrianclarkhub.okx.core.exception.OkxApiExceptionFactory;
 import io.github.adrianclarkhub.okx.core.exception.OkxNetworkException;
 import io.github.adrianclarkhub.okx.core.exception.OkxSerializationException;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
@@ -22,6 +30,8 @@ import java.util.Map;
  */
 public class OkxRestClient {
 
+    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
     private final OkxConfig config;
 
     private final OkHttpClient httpClient;
@@ -29,6 +39,8 @@ public class OkxRestClient {
     private final ObjectMapper objectMapper;
 
     private final String baseUrl;
+
+    private final OkxTimestampProvider timestampProvider;
 
     /**
      * 创建 REST 底层客户端。
@@ -52,10 +64,16 @@ public class OkxRestClient {
      * @param baseUrl REST API 基础地址
      */
     public OkxRestClient(OkxConfig config, OkHttpClient httpClient, ObjectMapper objectMapper, String baseUrl) {
+        this(config, httpClient, objectMapper, baseUrl, new OkxTimestampProvider());
+    }
+
+    public OkxRestClient(OkxConfig config, OkHttpClient httpClient, ObjectMapper objectMapper, String baseUrl,
+                         OkxTimestampProvider timestampProvider) {
         this.config = config;
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         this.baseUrl = baseUrl;
+        this.timestampProvider = timestampProvider == null ? new OkxTimestampProvider() : timestampProvider;
     }
 
     /**
@@ -68,8 +86,28 @@ public class OkxRestClient {
      * @return REST 通用响应
      */
     public <T> OkxRestResponse<T> get(String path, Map<String, String> queryParams, TypeReference<OkxRestResponse<T>> typeReference) {
-        HttpUrl url = buildUrl(path, queryParams);
-        Request request = new Request.Builder().url(url).get().build();
+        Request request = createRequest("GET", path, queryParams, null, false);
+        return execute(request, path, typeReference);
+    }
+
+    public <T> OkxRestResponse<T> getPrivate(String path, Map<String, String> queryParams,
+                                             TypeReference<OkxRestResponse<T>> typeReference) {
+        Request request = createRequest("GET", path, queryParams, null, true);
+        return execute(request, path, typeReference);
+    }
+
+    public <T> OkxRestResponse<T> post(String path, Object body, TypeReference<OkxRestResponse<T>> typeReference) {
+        Request request = createRequest("POST", path, null, serializeBody(body), false);
+        return execute(request, path, typeReference);
+    }
+
+    public <T> OkxRestResponse<T> postPrivate(String path, Object body, TypeReference<OkxRestResponse<T>> typeReference) {
+        Request request = createRequest("POST", path, null, serializeBody(body), true);
+        return execute(request, path, typeReference);
+    }
+
+    private <T> OkxRestResponse<T> execute(Request request, String path,
+                                           TypeReference<OkxRestResponse<T>> typeReference) {
         try (Response response = httpClient.newCall(request).execute()) {
             String body = readResponseBody(response);
             OkxRestResponse<T> restResponse = objectMapper.readValue(body, typeReference);
@@ -89,6 +127,37 @@ public class OkxRestClient {
         }
     }
 
+    private Request createRequest(String method, String path, Map<String, String> queryParams, String body,
+                                  boolean privateRequest) {
+        HttpUrl url = buildUrl(path, queryParams);
+        String requestPath = buildRequestPath(url);
+        Request.Builder builder = new Request.Builder().url(url)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json");
+        if (privateRequest) {
+            addAuthenticationHeaders(builder, method, requestPath, body);
+        }
+        if ("POST".equals(method)) {
+            builder.post(RequestBody.create(body == null ? "" : body, JSON));
+        } else {
+            builder.get();
+        }
+        return builder.build();
+    }
+
+    private void addAuthenticationHeaders(Request.Builder builder, String method, String requestPath, String body) {
+        OkxCredentials credentials = OkxCredentials.fromConfig(config);
+        String timestamp = timestampProvider.restTimestamp();
+        String sign = OkxSigner.sign(timestamp, method, requestPath, body, credentials.getSecretKey());
+        builder.header(OkxAuthHeaders.ACCESS_KEY, credentials.getApiKey());
+        builder.header(OkxAuthHeaders.ACCESS_SIGN, sign);
+        builder.header(OkxAuthHeaders.ACCESS_TIMESTAMP, timestamp);
+        builder.header(OkxAuthHeaders.ACCESS_PASSPHRASE, credentials.getPassphrase());
+        if (OkxEnvironmentEnum.DEMO.equals(config.getEnvironment())) {
+            builder.header(OkxAuthHeaders.SIMULATED_TRADING, "1");
+        }
+    }
+
     private HttpUrl buildUrl(String path, Map<String, String> queryParams) {
         HttpUrl base = HttpUrl.parse(baseUrl + path);
         if (base == null) {
@@ -103,6 +172,28 @@ public class OkxRestClient {
             }
         }
         return builder.build();
+    }
+
+    private String buildRequestPath(HttpUrl url) {
+        String encodedQuery = url.encodedQuery();
+        if (encodedQuery == null || encodedQuery.isEmpty()) {
+            return url.encodedPath();
+        }
+        return url.encodedPath() + "?" + encodedQuery;
+    }
+
+    private String serializeBody(Object body) {
+        if (body == null) {
+            return "";
+        }
+        if (body instanceof String) {
+            return (String) body;
+        }
+        try {
+            return objectMapper.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            throw new OkxSerializationException("Failed to serialize OKX REST request body.", e);
+        }
     }
 
     private String readResponseBody(Response response) {
