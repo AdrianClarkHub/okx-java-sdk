@@ -7,6 +7,8 @@ import io.github.adrianclarkhub.okx.core.enums.OkxEnum;
  */
 public enum OkxWebSocketOperationEnum implements OkxEnum {
 
+    LOGIN("login"),
+
     /**
      * 订阅频道，对应 OKX 原始值 {@code subscribe}。
      */

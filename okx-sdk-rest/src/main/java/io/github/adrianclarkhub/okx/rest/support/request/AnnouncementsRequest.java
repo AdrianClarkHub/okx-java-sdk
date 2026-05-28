@@ -1,6 +1,7 @@
 package io.github.adrianclarkhub.okx.rest.support.request;
 
-import java.util.LinkedHashMap;
+import io.github.adrianclarkhub.okx.rest.common.OkxRestQueryParams;
+
 import java.util.Map;
 
 /**
@@ -73,13 +74,9 @@ public class AnnouncementsRequest {
      * @return 查询参数
      */
     public Map<String, String> toQueryParams() {
-        Map<String, String> queryParams = new LinkedHashMap<>();
-        if (annType != null && !annType.trim().isEmpty()) {
-            queryParams.put("annType", annType.trim());
-        }
-        if (page != null && !page.trim().isEmpty()) {
-            queryParams.put("page", page.trim());
-        }
-        return queryParams;
+        return new OkxRestQueryParams()
+                .add("annType", annType)
+                .add("page", page)
+                .toMap();
     }
 }
