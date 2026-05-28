@@ -4,6 +4,7 @@ import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClient;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClients;
 import io.github.adrianclarkhub.okx.rest.status.StatusClient;
+import io.github.adrianclarkhub.okx.rest.support.SupportClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -52,5 +53,17 @@ public class OkxAutoConfiguration {
     @ConditionalOnMissingBean
     public StatusClient okxStatusClient(OkxRestClient okxRestClient) {
         return new StatusClient(okxRestClient);
+    }
+
+    /**
+     * 注册公告 REST 客户端 Bean。
+     *
+     * @param okxRestClient REST 底层客户端
+     * @return 公告客户端
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public SupportClient okxSupportClient(OkxRestClient okxRestClient) {
+        return new SupportClient(okxRestClient);
     }
 }

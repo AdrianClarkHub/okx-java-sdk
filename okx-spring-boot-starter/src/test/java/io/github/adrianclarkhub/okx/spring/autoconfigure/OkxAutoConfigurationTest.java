@@ -3,6 +3,7 @@ package io.github.adrianclarkhub.okx.spring.autoconfigure;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClient;
 import io.github.adrianclarkhub.okx.rest.status.StatusClient;
+import io.github.adrianclarkhub.okx.rest.support.SupportClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -30,6 +31,7 @@ class OkxAutoConfigurationTest {
                     assertNotNull(context.getBean(OkxConfig.class), "OkxConfig bean should be registered.");
                     assertNotNull(context.getBean(OkxRestClient.class), "OkxRestClient bean should be registered.");
                     assertNotNull(context.getBean(StatusClient.class), "StatusClient bean should be registered.");
+                    assertNotNull(context.getBean(SupportClient.class), "SupportClient bean should be registered.");
                     assertEquals("https://www.okx.com", context.getBean(OkxConfig.class).resolveRestBaseUrl(),
                             "REST base URL should be bound from okx.endpoints.rest-base-url.");
                 });
