@@ -2,13 +2,11 @@ package io.github.adrianclarkhub.okx.rest.status;
 
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxConfigLoader;
-import io.github.adrianclarkhub.okx.core.exception.OkxNetworkException;
-import io.github.adrianclarkhub.okx.core.exception.OkxRateLimitException;
+import io.github.adrianclarkhub.okx.core.config.OkxProxyConfig;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClients;
 import io.github.adrianclarkhub.okx.rest.status.enums.StatusMaintenanceStateEnum;
 import io.github.adrianclarkhub.okx.rest.status.request.StatusRequest;
 import io.github.adrianclarkhub.okx.rest.status.response.StatusResponse;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
@@ -30,18 +28,10 @@ class StatusClientLiveConsoleTest {
 
     @Test
     void shouldFetchStatusFromOkxPublicRestApi() {
+        printLiveConfig();
         StatusClient statusClient = new StatusClient(OkxRestClients.create(OKX_CONFIG));
 
-        List<StatusResponse> responses;
-        try {
-            responses = statusClient.getStatus(new StatusRequest(StatusMaintenanceStateEnum.COMPLETED));
-        } catch (OkxRateLimitException e) {
-            Assumptions.abort("OKX live API rate limited this run: " + e.getMessage());
-            return;
-        } catch (OkxNetworkException e) {
-            Assumptions.abort("OKX live API network unavailable this run: " + e.getMessage());
-            return;
-        }
+        List<StatusResponse> responses = statusClient.getStatus(new StatusRequest(StatusMaintenanceStateEnum.COMPLETED));
 
         assertNotNull(responses, "Live status response should not be null.");
         System.out.println("OKX Live API: GET /api/v5/system/status");
@@ -68,5 +58,15 @@ class StatusClientLiveConsoleTest {
             return OkxConfigLoader.load();
         }
         return OkxConfigLoader.loadFromClasspath(LOCAL_LIVE_CONFIG);
+    }
+
+    private static void printLiveConfig() {
+        OkxProxyConfig proxy = OKX_CONFIG.getHttp() == null ? null : OKX_CONFIG.getHttp().getProxy();
+        System.out.println("OKX live REST base URL: " + OKX_CONFIG.resolveRestBaseUrl());
+        if (proxy == null || !proxy.isEnabled()) {
+            System.out.println("OKX live proxy: disabled");
+            return;
+        }
+        System.out.println("OKX live proxy: " + proxy.getHost() + ":" + proxy.getPort());
     }
 }

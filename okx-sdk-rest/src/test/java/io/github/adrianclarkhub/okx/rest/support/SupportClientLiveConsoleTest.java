@@ -2,12 +2,10 @@ package io.github.adrianclarkhub.okx.rest.support;
 
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxConfigLoader;
-import io.github.adrianclarkhub.okx.core.exception.OkxNetworkException;
-import io.github.adrianclarkhub.okx.core.exception.OkxRateLimitException;
+import io.github.adrianclarkhub.okx.core.config.OkxProxyConfig;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClients;
 import io.github.adrianclarkhub.okx.rest.support.response.AnnouncementTypeResponse;
 import io.github.adrianclarkhub.okx.rest.support.response.AnnouncementsResponse;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
@@ -30,18 +28,10 @@ class SupportClientLiveConsoleTest {
 
     @Test
     void shouldFetchAnnouncementsFromOkxPublicRestApi() {
+        printLiveConfig();
         SupportClient supportClient = new SupportClient(OkxRestClients.create(OKX_CONFIG));
 
-        List<AnnouncementsResponse> responses;
-        try {
-            responses = supportClient.getAnnouncements();
-        } catch (OkxRateLimitException e) {
-            Assumptions.abort("OKX live API rate limited this run: " + e.getMessage());
-            return;
-        } catch (OkxNetworkException e) {
-            Assumptions.abort("OKX live API network unavailable this run: " + e.getMessage());
-            return;
-        }
+        List<AnnouncementsResponse> responses = supportClient.getAnnouncements();
 
         assertNotNull(responses, "Live announcements response should not be null.");
         assertFalse(responses.isEmpty(), "Live announcements response should contain at least one page item.");
@@ -59,18 +49,10 @@ class SupportClientLiveConsoleTest {
 
     @Test
     void shouldFetchAnnouncementTypesFromOkxPublicRestApi() {
+        printLiveConfig();
         SupportClient supportClient = new SupportClient(OkxRestClients.create(OKX_CONFIG));
 
-        List<AnnouncementTypeResponse> responses;
-        try {
-            responses = supportClient.getAnnouncementTypes();
-        } catch (OkxRateLimitException e) {
-            Assumptions.abort("OKX live API rate limited this run: " + e.getMessage());
-            return;
-        } catch (OkxNetworkException e) {
-            Assumptions.abort("OKX live API network unavailable this run: " + e.getMessage());
-            return;
-        }
+        List<AnnouncementTypeResponse> responses = supportClient.getAnnouncementTypes();
 
         assertNotNull(responses, "Live announcement types response should not be null.");
         assertFalse(responses.isEmpty(), "Live announcement types response should contain at least one item.");
@@ -95,5 +77,15 @@ class SupportClientLiveConsoleTest {
             return OkxConfigLoader.load();
         }
         return OkxConfigLoader.loadFromClasspath(LOCAL_LIVE_CONFIG);
+    }
+
+    private static void printLiveConfig() {
+        OkxProxyConfig proxy = OKX_CONFIG.getHttp() == null ? null : OKX_CONFIG.getHttp().getProxy();
+        System.out.println("OKX live REST base URL: " + OKX_CONFIG.resolveRestBaseUrl());
+        if (proxy == null || !proxy.isEnabled()) {
+            System.out.println("OKX live proxy: disabled");
+            return;
+        }
+        System.out.println("OKX live proxy: " + proxy.getHost() + ":" + proxy.getPort());
     }
 }
