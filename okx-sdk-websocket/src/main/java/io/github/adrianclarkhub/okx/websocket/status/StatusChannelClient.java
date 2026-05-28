@@ -1,16 +1,15 @@
 package io.github.adrianclarkhub.okx.websocket.status;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.adrianclarkhub.okx.core.exception.OkxSerializationException;
+import io.github.adrianclarkhub.okx.core.http.OkxObjectMappers;
 import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketEvent;
+import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketJsonCodec;
 import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketOperationEnum;
 import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketPushMessage;
 import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketRequest;
+import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketRequests;
 import io.github.adrianclarkhub.okx.websocket.status.response.StatusChannelData;
-
-import java.util.Collections;
 
 /**
  * OKX WebSocket Status 频道客户端。
@@ -27,13 +26,13 @@ public class StatusChannelClient {
             new TypeReference<OkxWebSocketPushMessage<StatusChannelArg, StatusChannelData>>() {
             };
 
-    private final ObjectMapper objectMapper;
+    private final OkxWebSocketJsonCodec jsonCodec;
 
     /**
      * 创建 Status 频道客户端。
      */
     public StatusChannelClient() {
-        this(new ObjectMapper());
+        this(OkxObjectMappers.create(null));
     }
 
     /**
@@ -42,7 +41,7 @@ public class StatusChannelClient {
      * @param objectMapper JSON 序列化器
      */
     public StatusChannelClient(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
+        this.jsonCodec = new OkxWebSocketJsonCodec(objectMapper);
     }
 
     /**
@@ -110,11 +109,7 @@ public class StatusChannelClient {
      * @return 订阅事件响应
      */
     public OkxWebSocketEvent<StatusChannelArg> parseEvent(String json) {
-        try {
-            return objectMapper.readValue(json, EVENT_TYPE);
-        } catch (JsonProcessingException e) {
-            throw new OkxSerializationException("Failed to parse OKX WebSocket status event.", e);
-        }
+        return jsonCodec.fromJson(json, EVENT_TYPE, "Failed to parse OKX WebSocket status event.");
     }
 
     /**
@@ -124,26 +119,14 @@ public class StatusChannelClient {
      * @return Status 频道推送消息
      */
     public OkxWebSocketPushMessage<StatusChannelArg, StatusChannelData> parsePushMessage(String json) {
-        try {
-            return objectMapper.readValue(json, PUSH_TYPE);
-        } catch (JsonProcessingException e) {
-            throw new OkxSerializationException("Failed to parse OKX WebSocket status push message.", e);
-        }
+        return jsonCodec.fromJson(json, PUSH_TYPE, "Failed to parse OKX WebSocket status push message.");
     }
 
     private OkxWebSocketRequest<StatusChannelArg> createRequest(String id, OkxWebSocketOperationEnum operation) {
-        OkxWebSocketRequest<StatusChannelArg> request = new OkxWebSocketRequest<StatusChannelArg>();
-        request.setId(id);
-        request.setOp(operation.getCode());
-        request.setArgs(Collections.singletonList(new StatusChannelArg()));
-        return request;
+        return OkxWebSocketRequests.create(id, operation, new StatusChannelArg());
     }
 
     private String toJson(OkxWebSocketRequest<StatusChannelArg> request) {
-        try {
-            return objectMapper.writeValueAsString(request);
-        } catch (JsonProcessingException e) {
-            throw new OkxSerializationException("Failed to serialize OKX WebSocket status request.", e);
-        }
+        return jsonCodec.toJson(request, "Failed to serialize OKX WebSocket status request.");
     }
 }

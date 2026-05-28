@@ -1,8 +1,8 @@
 package io.github.adrianclarkhub.okx.rest.status.request;
 
+import io.github.adrianclarkhub.okx.rest.common.OkxRestQueryParams;
 import io.github.adrianclarkhub.okx.rest.status.enums.StatusMaintenanceStateEnum;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -53,10 +53,8 @@ public class StatusRequest {
      * @return 查询参数
      */
     public Map<String, String> toQueryParams() {
-        Map<String, String> queryParams = new LinkedHashMap<>();
-        if (state != null && !state.isUnknown()) {
-            queryParams.put("state", state.getCode());
-        }
-        return queryParams;
+        return new OkxRestQueryParams()
+                .add("state", state)
+                .toMap();
     }
 }

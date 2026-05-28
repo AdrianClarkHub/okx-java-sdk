@@ -3,10 +3,10 @@ package io.github.adrianclarkhub.okx.rest.status;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClient;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestResponse;
+import io.github.adrianclarkhub.okx.rest.common.OkxRestResponses;
 import io.github.adrianclarkhub.okx.rest.status.request.StatusRequest;
 import io.github.adrianclarkhub.okx.rest.status.response.StatusResponse;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,9 +53,6 @@ public class StatusClient {
     public List<StatusResponse> getStatus(StatusRequest request) {
         StatusRequest actualRequest = request == null ? new StatusRequest() : request;
         OkxRestResponse<StatusResponse> response = restClient.get(STATUS_PATH, actualRequest.toQueryParams(), STATUS_RESPONSE_TYPE);
-        if (response.getData() == null) {
-            return Collections.emptyList();
-        }
-        return response.getData();
+        return OkxRestResponses.dataOrEmpty(response);
     }
 }

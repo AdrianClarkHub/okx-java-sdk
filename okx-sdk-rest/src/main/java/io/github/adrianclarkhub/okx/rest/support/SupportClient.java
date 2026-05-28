@@ -3,6 +3,7 @@ package io.github.adrianclarkhub.okx.rest.support;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClient;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestResponse;
+import io.github.adrianclarkhub.okx.rest.common.OkxRestResponses;
 import io.github.adrianclarkhub.okx.rest.support.request.AnnouncementsRequest;
 import io.github.adrianclarkhub.okx.rest.support.response.AnnouncementTypeResponse;
 import io.github.adrianclarkhub.okx.rest.support.response.AnnouncementsResponse;
@@ -59,10 +60,7 @@ public class SupportClient {
         AnnouncementsRequest actualRequest = request == null ? new AnnouncementsRequest() : request;
         OkxRestResponse<AnnouncementsResponse> response =
                 restClient.get(ANNOUNCEMENTS_PATH, actualRequest.toQueryParams(), ANNOUNCEMENTS_RESPONSE_TYPE);
-        if (response.getData() == null) {
-            return Collections.emptyList();
-        }
-        return response.getData();
+        return OkxRestResponses.dataOrEmpty(response);
     }
 
     /**
@@ -73,9 +71,6 @@ public class SupportClient {
     public List<AnnouncementTypeResponse> getAnnouncementTypes() {
         OkxRestResponse<AnnouncementTypeResponse> response =
                 restClient.get(ANNOUNCEMENT_TYPES_PATH, Collections.emptyMap(), ANNOUNCEMENT_TYPES_RESPONSE_TYPE);
-        if (response.getData() == null) {
-            return Collections.emptyList();
-        }
-        return response.getData();
+        return OkxRestResponses.dataOrEmpty(response);
     }
 }

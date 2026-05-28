@@ -1,12 +1,10 @@
 package io.github.adrianclarkhub.okx.websocket.common;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.adrianclarkhub.okx.core.auth.OkxCredentials;
 import io.github.adrianclarkhub.okx.core.auth.OkxSigner;
 import io.github.adrianclarkhub.okx.core.auth.OkxTimestampProvider;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
-import io.github.adrianclarkhub.okx.core.exception.OkxSerializationException;
 import io.github.adrianclarkhub.okx.core.http.OkxObjectMappers;
 
 import java.util.Collections;
@@ -19,7 +17,7 @@ public class OkxWebSocketAuthClient {
 
     private final OkxConfig config;
 
-    private final ObjectMapper objectMapper;
+    private final OkxWebSocketJsonCodec jsonCodec;
 
     private final OkxTimestampProvider timestampProvider;
 
@@ -29,7 +27,7 @@ public class OkxWebSocketAuthClient {
 
     public OkxWebSocketAuthClient(OkxConfig config, ObjectMapper objectMapper, OkxTimestampProvider timestampProvider) {
         this.config = config;
-        this.objectMapper = objectMapper == null ? OkxObjectMappers.create(config) : objectMapper;
+        this.jsonCodec = new OkxWebSocketJsonCodec(objectMapper == null ? OkxObjectMappers.create(config) : objectMapper);
         this.timestampProvider = timestampProvider == null ? new OkxTimestampProvider() : timestampProvider;
     }
 
@@ -51,18 +49,10 @@ public class OkxWebSocketAuthClient {
     }
 
     public String loginJson() {
-        try {
-            return objectMapper.writeValueAsString(createLoginRequest());
-        } catch (JsonProcessingException e) {
-            throw new OkxSerializationException("Failed to serialize OKX WebSocket login request.", e);
-        }
+        return jsonCodec.toJson(createLoginRequest(), "Failed to serialize OKX WebSocket login request.");
     }
 
     public OkxWebSocketLoginEvent parseLoginEvent(String json) {
-        try {
-            return objectMapper.readValue(json, OkxWebSocketLoginEvent.class);
-        } catch (JsonProcessingException e) {
-            throw new OkxSerializationException("Failed to parse OKX WebSocket login event.", e);
-        }
+        return jsonCodec.fromJson(json, OkxWebSocketLoginEvent.class, "Failed to parse OKX WebSocket login event.");
     }
 }
