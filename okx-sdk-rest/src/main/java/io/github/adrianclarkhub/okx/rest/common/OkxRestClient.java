@@ -33,6 +33,19 @@ public class OkxRestClient {
     /**
      * 创建 REST 底层客户端。
      *
+     * <p>REST 基础地址从 {@link OkxConfig#resolveRestBaseUrl()} 解析。</p>
+     *
+     * @param config OKX SDK 配置
+     * @param httpClient OkHttp 客户端
+     * @param objectMapper JSON 对象映射器
+     */
+    public OkxRestClient(OkxConfig config, OkHttpClient httpClient, ObjectMapper objectMapper) {
+        this(config, httpClient, objectMapper, config.resolveRestBaseUrl());
+    }
+
+    /**
+     * 创建 REST 底层客户端。
+     *
      * @param config OKX SDK 配置
      * @param httpClient OkHttp 客户端
      * @param objectMapper JSON 对象映射器

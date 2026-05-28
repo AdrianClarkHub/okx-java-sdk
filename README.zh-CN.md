@@ -107,6 +107,29 @@ YOUR_SECRET_KEY
 YOUR_PASSPHRASE
 ```
 
+## 配置规范
+
+SDK 对外统一使用 `OkxConfig` 作为唯一配置模型。
+
+普通 Java 项目和 Spring Boot 项目不需要同时维护多个真实配置文件。实际业务项目请选择一种方式：
+
+- **代码配置**：业务项目创建 `OkxConfig`，设置 API Key、Secret Key、Passphrase、环境、代理和超时等，然后传给 SDK Client。
+- **显式外部文件**：业务项目通过 `-Dokx.config.file=/path/to/okx.properties` 或 `OKX_CONFIG_FILE=/path/to/okx.properties` 指定自己的配置文件。
+- **应用 classpath 文件**：普通 Java 项目可以把 `okx.properties` 放在自己应用的 `src/main/resources`，并显式调用 `OkxConfigLoader.loadFromClasspath("okx.properties")`。
+- **环境变量**：也可以只使用 `OKX_API_KEY`、`OKX_SECRET_KEY`、`OKX_PASSPHRASE` 等环境变量。
+- **Spring Boot**：在业务应用自己的 `application.yml` 或 `application-local.yml` 中配置 `okx.*`。
+
+`OkxConfigLoader.load()` 不会隐式读取 SDK 源码仓库根目录或 SDK 模块 `src/main/resources` 下的用户配置文件，只会合并显式指定的外部文件和环境变量。
+
+本仓库中的 SDK 模块不应在 `src/main/resources` 放置用户配置或示例配置，避免配置文件进入发布产物。
+
+示例配置仅放在 `okx-sdk-examples/src/main/resources/`：
+
+- `okx.properties.example`
+- `application-okx.yml.example`
+
+本地真实配置必须被 `.gitignore` 忽略，不能提交。
+
 ## 文档和语言规范
 
 - 面向用户阅读的文档支持中文和英文。

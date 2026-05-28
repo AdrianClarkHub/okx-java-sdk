@@ -4,8 +4,8 @@ import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
 import io.github.adrianclarkhub.okx.core.enums.UnknownEnumStrategyEnum;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,14 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * OKX SDK 配置模型测试。
- *
- * <p>验证根配置、账户配置、HTTP 配置和代理配置的默认值与属性读写行为。</p>
  */
 class OkxConfigTest {
 
-    /**
-     * 验证 SDK 根配置默认值。
-     */
     @Test
     void shouldCreateDefaultRootConfig() {
         OkxConfig config = new OkxConfig();
@@ -30,19 +25,20 @@ class OkxConfigTest {
         assertEquals(OkxEnvironmentEnum.PRODUCTION, config.getEnvironment(), "Default environment should be production.");
         assertEquals(UnknownEnumStrategyEnum.USE_UNKNOWN, config.getUnknownEnumStrategy(), "Default unknown enum strategy should use UNKNOWN.");
         assertNotNull(config.getHttp(), "Default HTTP config should be created.");
-        assertNotNull(config.getAccounts(), "Default account list should be created.");
-        assertTrue(config.getAccounts().isEmpty(), "Default account list should be empty.");
+        assertNotNull(config.getEndpoints(), "Default endpoint config should be created.");
+        assertNotNull(config.getLive(), "Default live config should be created.");
+        assertNotNull(config.getAccounts(), "Default account map should be created.");
+        assertTrue(config.getAccounts().isEmpty(), "Default account map should be empty.");
+        assertEquals(OkxEndpointConfig.DEFAULT_REST_BASE_URL, config.resolveRestBaseUrl(), "Default REST base URL should be used.");
+        assertFalse(config.isLiveTestsEnabled(), "Live tests should be disabled by default.");
     }
 
-    /**
-     * 验证 SDK 根配置属性可设置。
-     */
     @Test
     void shouldSetRootConfigProperties() {
         OkxConfig config = new OkxConfig();
         OkxHttpConfig http = new OkxHttpConfig();
-        List<OkxAccountConfig> accounts = new ArrayList<>();
-        accounts.add(new OkxAccountConfig());
+        Map<String, OkxAccountConfig> accounts = new LinkedHashMap<>();
+        accounts.put("main", new OkxAccountConfig());
 
         config.setEnvironment(OkxEnvironmentEnum.DEMO);
         config.setUnknownEnumStrategy(UnknownEnumStrategyEnum.THROW_EXCEPTION);
@@ -52,12 +48,24 @@ class OkxConfigTest {
         assertEquals(OkxEnvironmentEnum.DEMO, config.getEnvironment(), "Configured environment should be preserved.");
         assertEquals(UnknownEnumStrategyEnum.THROW_EXCEPTION, config.getUnknownEnumStrategy(), "Configured unknown enum strategy should be preserved.");
         assertSame(http, config.getHttp(), "Configured HTTP config should be preserved.");
-        assertSame(accounts, config.getAccounts(), "Configured account list should be preserved.");
+        assertSame(accounts, config.getAccounts(), "Configured account map should be preserved.");
     }
 
-    /**
-     * 验证 HTTP 配置默认值。
-     */
+    @Test
+    void shouldNormalizeRootCredentialsIntoDefaultAccount() {
+        OkxConfig config = new OkxConfig();
+        config.setApiKey("api-key");
+        config.setSecretKey("secret-key");
+        config.setPassphrase("passphrase");
+
+        config.normalize();
+
+        assertEquals(1, config.getAccounts().size(), "Root credentials should create one account.");
+        assertNotNull(config.getActiveAccount(), "Active account should be available after normalize.");
+        assertEquals("api-key", config.getActiveAccount().getApiKey(), "Active account API key should match root credentials.");
+        assertEquals("default", config.getDefaultAccount(), "Default account name should be assigned.");
+    }
+
     @Test
     void shouldCreateDefaultHttpConfig() {
         OkxHttpConfig config = new OkxHttpConfig();
@@ -70,9 +78,6 @@ class OkxConfigTest {
         assertFalse(config.getProxy().isEnabled(), "Default proxy should be disabled.");
     }
 
-    /**
-     * 验证 HTTP 配置属性可设置。
-     */
     @Test
     void shouldSetHttpConfigProperties() {
         OkxHttpConfig config = new OkxHttpConfig();
@@ -91,9 +96,6 @@ class OkxConfigTest {
         assertSame(proxy, config.getProxy(), "Configured proxy should be preserved.");
     }
 
-    /**
-     * 验证代理配置属性可设置。
-     */
     @Test
     void shouldSetProxyConfigProperties() {
         OkxProxyConfig config = new OkxProxyConfig();
@@ -111,9 +113,6 @@ class OkxConfigTest {
         assertEquals("proxy-password", config.getPassword(), "Configured proxy password should be preserved.");
     }
 
-    /**
-     * 验证账户配置属性可设置。
-     */
     @Test
     void shouldSetAccountConfigProperties() {
         OkxAccountConfig config = new OkxAccountConfig();

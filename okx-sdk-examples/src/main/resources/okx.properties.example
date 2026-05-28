@@ -1,0 +1,33 @@
+# OKX Java SDK example configuration.
+# Copy this file to your own application as okx.properties, then fill real values locally.
+# Do not commit real API keys, secret keys, passphrases, proxy credentials, or local paths.
+
+okx.environment=production
+okx.default-account=main
+
+okx.api-key=YOUR_API_KEY
+okx.secret-key=YOUR_SECRET_KEY
+okx.passphrase=YOUR_PASSPHRASE
+
+okx.accounts.main.api-key=YOUR_MAIN_API_KEY
+okx.accounts.main.secret-key=YOUR_MAIN_SECRET_KEY
+okx.accounts.main.passphrase=YOUR_MAIN_PASSPHRASE
+okx.accounts.demo.api-key=YOUR_DEMO_API_KEY
+okx.accounts.demo.secret-key=YOUR_DEMO_SECRET_KEY
+okx.accounts.demo.passphrase=YOUR_DEMO_PASSPHRASE
+
+okx.http.connect-timeout-millis=10000
+okx.http.read-timeout-millis=30000
+okx.http.write-timeout-millis=30000
+okx.http.proxy.enabled=false
+okx.http.proxy.host=YOUR_PROXY_HOST
+okx.http.proxy.port=7890
+okx.http.proxy.username=YOUR_PROXY_USERNAME
+okx.http.proxy.password=YOUR_PROXY_PASSWORD
+
+okx.endpoints.rest-base-url=https://www.okx.com
+okx.endpoints.ws-public-url=wss://ws.okx.com:8443/ws/v5/public
+okx.endpoints.ws-private-url=wss://ws.okx.com:8443/ws/v5/private
+okx.endpoints.ws-business-url=wss://ws.okx.com:8443/ws/v5/business
+
+okx.live.enabled=false

@@ -18,6 +18,7 @@ okx-local.yaml
 local-*.yml
 local-*.yaml
 *.local.properties
+okx.properties
 
 .env
 .env.*

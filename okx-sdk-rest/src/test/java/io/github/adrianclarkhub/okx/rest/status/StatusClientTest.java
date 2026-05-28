@@ -72,7 +72,7 @@ class StatusClientTest {
         private Map<String, String> queryParams;
 
         RecordingOkxRestClient() {
-            super(new OkxConfig(), new OkHttpClient(), new ObjectMapper(), "https://www.okx.com");
+            super(new OkxConfig(), new OkHttpClient(), new ObjectMapper());
         }
 
         @Override

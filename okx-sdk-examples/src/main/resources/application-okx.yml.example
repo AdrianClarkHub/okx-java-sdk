@@ -1,31 +1,25 @@
-# OKX Java SDK Spring Boot 示例配置。
-# 复制本文件为 application-okx-local.yml 后填写真实配置。
-# application-okx-local.yml 必须只保存在本地，不能提交到 GitHub。
+# OKX Java SDK Spring Boot example configuration.
+# Copy the okx section into your own application.yml or application-local.yml.
+# Do not commit real API keys, secret keys, passphrases, proxy credentials, or local paths.
 
 okx:
-  # 默认账户名称。启用多账户配置时使用。
+  environment: production
   default-account: main
 
-  # 简单单账户配置。适合只有一个 OKX API 账户的项目。
   api-key: YOUR_API_KEY
   secret-key: YOUR_SECRET_KEY
   passphrase: YOUR_PASSPHRASE
-  simulated: false
 
-  # 多账户配置。适合同时使用实盘、模拟盘或多个账户的项目。
   accounts:
     main:
       api-key: YOUR_MAIN_API_KEY
       secret-key: YOUR_MAIN_SECRET_KEY
       passphrase: YOUR_MAIN_PASSPHRASE
-      simulated: false
     demo:
       api-key: YOUR_DEMO_API_KEY
       secret-key: YOUR_DEMO_SECRET_KEY
       passphrase: YOUR_DEMO_PASSPHRASE
-      simulated: true
 
-  # HTTP 客户端配置。代理默认不启用，仅在网络环境需要时显式开启。
   http:
     connect-timeout-millis: 10000
     read-timeout-millis: 30000
@@ -36,3 +30,12 @@ okx:
       port: 7890
       username: YOUR_PROXY_USERNAME
       password: YOUR_PROXY_PASSWORD
+
+  endpoints:
+    rest-base-url: https://www.okx.com
+    ws-public-url: wss://ws.okx.com:8443/ws/v5/public
+    ws-private-url: wss://ws.okx.com:8443/ws/v5/private
+    ws-business-url: wss://ws.okx.com:8443/ws/v5/business
+
+  live:
+    enabled: false

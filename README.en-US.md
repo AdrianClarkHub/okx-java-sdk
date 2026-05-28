@@ -107,6 +107,25 @@ YOUR_SECRET_KEY
 YOUR_PASSPHRASE
 ```
 
+## Configuration Convention
+
+The SDK exposes `OkxConfig` as the single configuration model.
+
+Plain Java projects and Spring Boot projects do not need to maintain multiple real configuration files at the same time. Choose one approach for an application:
+
+- **Plain Java**: use one local `okx.properties`, or pass one external file with `-Dokx.config.file=/path/to/okx.properties`.
+- **Spring Boot**: configure `okx.*` in the application's own `application.yml` or `application-local.yml`.
+- **Environment variables**: use `OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_PASSPHRASE`, and related variables.
+
+SDK modules in this repository should not place user configuration or example configuration under `src/main/resources`, so configuration files do not enter released SDK artifacts.
+
+Example configuration files are kept only under `okx-sdk-examples/src/main/resources/`:
+
+- `okx.properties.example`
+- `application-okx.yml.example`
+
+Real local configuration must be ignored by `.gitignore` and must not be committed.
+
 ## Documentation Language
 
 - User-facing documentation supports English and Chinese.
