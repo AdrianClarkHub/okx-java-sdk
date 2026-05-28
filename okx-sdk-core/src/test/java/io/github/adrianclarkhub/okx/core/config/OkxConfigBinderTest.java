@@ -1,11 +1,13 @@
 package io.github.adrianclarkhub.okx.core.config;
 
 import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
+import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -72,5 +74,18 @@ class OkxConfigBinderTest {
                 "WebSocket private URL alias should be supported.");
         assertEquals("wss://alias.okx.com/ws/v5/business", config.getEndpoints().getWsBusinessUrl(),
                 "WebSocket business URL alias should be supported.");
+    }
+
+    @Test
+    void shouldRejectInvalidIntegerProperty() {
+        Properties properties = new Properties();
+        properties.setProperty("okx.http.proxy.port", "not-a-number");
+
+        OkxConfigurationException exception = assertThrows(OkxConfigurationException.class,
+                () -> OkxConfigBinder.fromProperties(properties),
+                "Invalid integer config should fail fast.");
+
+        assertTrue(exception.getMessage().contains("okx.http.proxy.port"),
+                "Exception should identify the invalid property.");
     }
 }

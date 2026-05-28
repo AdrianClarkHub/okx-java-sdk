@@ -10,6 +10,7 @@ import io.github.adrianclarkhub.okx.core.auth.OkxTimestampProvider;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
 import io.github.adrianclarkhub.okx.core.exception.OkxApiExceptionFactory;
+import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 import io.github.adrianclarkhub.okx.core.exception.OkxNetworkException;
 import io.github.adrianclarkhub.okx.core.exception.OkxSerializationException;
 import okhttp3.HttpUrl;
@@ -52,7 +53,7 @@ public class OkxRestClient {
      * @param objectMapper JSON 对象映射器
      */
     public OkxRestClient(OkxConfig config, OkHttpClient httpClient, ObjectMapper objectMapper) {
-        this(config, httpClient, objectMapper, config.resolveRestBaseUrl());
+        this(config, httpClient, objectMapper, resolveBaseUrl(config));
     }
 
     /**
@@ -69,10 +70,26 @@ public class OkxRestClient {
 
     public OkxRestClient(OkxConfig config, OkHttpClient httpClient, ObjectMapper objectMapper, String baseUrl,
                          OkxTimestampProvider timestampProvider) {
+        if (config == null) {
+            throw new OkxConfigurationException("OKX config must not be null.");
+        }
+        if (httpClient == null) {
+            throw new OkxConfigurationException("OKX HTTP client must not be null.");
+        }
+        if (objectMapper == null) {
+            throw new OkxConfigurationException("OKX object mapper must not be null.");
+        }
+        if (baseUrl == null || baseUrl.trim().isEmpty()) {
+            throw new OkxConfigurationException("OKX REST base URL must not be empty.");
+        }
+        if (HttpUrl.parse(baseUrl) == null) {
+            throw new OkxConfigurationException("Invalid OKX REST base URL: " + baseUrl);
+        }
+        config.normalize();
         this.config = config;
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
-        this.baseUrl = baseUrl;
+        this.baseUrl = trimTrailingSlash(baseUrl);
         this.timestampProvider = timestampProvider == null ? new OkxTimestampProvider() : timestampProvider;
     }
 
@@ -108,22 +125,24 @@ public class OkxRestClient {
 
     private <T> OkxRestResponse<T> execute(Request request, String path,
                                            TypeReference<OkxRestResponse<T>> typeReference) {
-        try (Response response = httpClient.newCall(request).execute()) {
-            String body = readResponseBody(response);
-            OkxRestResponse<T> restResponse = objectMapper.readValue(body, typeReference);
-            if (!response.isSuccessful() || restResponse == null || !"0".equals(restResponse.getCode())) {
-                String code = restResponse == null ? null : restResponse.getCode();
-                String msg = restResponse == null ? body : restResponse.getMsg();
-                throw OkxApiExceptionFactory.create(code, msg, response.code(), path);
+        int maxRetries = maxRetries();
+        int attempt = 0;
+        while (true) {
+            try (Response response = httpClient.newCall(request).execute()) {
+                String body = readResponseBody(response);
+                OkxRestResponse<T> restResponse = parseResponse(body, typeReference, response, path);
+                if (!response.isSuccessful() || restResponse == null || !"0".equals(restResponse.getCode())) {
+                    String code = restResponse == null ? null : restResponse.getCode();
+                    String msg = restResponse == null ? body : restResponse.getMsg();
+                    throw OkxApiExceptionFactory.create(code, msg, response.code(), path);
+                }
+                return restResponse;
+            } catch (IOException e) {
+                if (!shouldRetry(request, attempt, maxRetries)) {
+                    throw new OkxNetworkException("OKX REST " + request.method() + " request failed: " + path, e);
+                }
+                attempt++;
             }
-            return restResponse;
-        } catch (IOException e) {
-            throw new OkxNetworkException("OKX REST GET request failed: " + path, e);
-        } catch (RuntimeException e) {
-            if (e instanceof OkxSerializationException) {
-                throw e;
-            }
-            throw e;
         }
     }
 
@@ -132,12 +151,12 @@ public class OkxRestClient {
         HttpUrl url = buildUrl(path, queryParams);
         String requestPath = buildRequestPath(url);
         Request.Builder builder = new Request.Builder().url(url)
-                .header("Accept", "application/json")
-                .header("Content-Type", "application/json");
+                .header("Accept", "application/json");
         if (privateRequest) {
             addAuthenticationHeaders(builder, method, requestPath, body);
         }
         if ("POST".equals(method)) {
+            builder.header("Content-Type", "application/json");
             builder.post(RequestBody.create(body == null ? "" : body, JSON));
         } else {
             builder.get();
@@ -206,6 +225,52 @@ public class OkxRestClient {
         } catch (IOException e) {
             throw new OkxNetworkException("Failed to read OKX REST response body.", e);
         }
+    }
+
+    private <T> OkxRestResponse<T> parseResponse(String body, TypeReference<OkxRestResponse<T>> typeReference,
+                                                 Response response, String path) {
+        try {
+            return objectMapper.readValue(body, typeReference);
+        } catch (IOException e) {
+            if (!response.isSuccessful()) {
+                throw new OkxNetworkException("OKX REST request failed with HTTP " + response.code()
+                        + " for " + path + ": " + abbreviate(body), e);
+            }
+            throw new OkxSerializationException("Failed to deserialize OKX REST response body for " + path + ".", e);
+        }
+    }
+
+    private int maxRetries() {
+        if (config.getHttp() == null) {
+            return 0;
+        }
+        return Math.max(0, config.getHttp().getMaxRetries());
+    }
+
+    private boolean shouldRetry(Request request, int attempt, int maxRetries) {
+        return "GET".equals(request.method()) && attempt < maxRetries;
+    }
+
+    private String abbreviate(String value) {
+        if (value == null || value.length() <= 512) {
+            return value;
+        }
+        return value.substring(0, 512) + "...";
+    }
+
+    private static String trimTrailingSlash(String value) {
+        String trimmed = value.trim();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
+    private static String resolveBaseUrl(OkxConfig config) {
+        if (config == null) {
+            throw new OkxConfigurationException("OKX config must not be null.");
+        }
+        return config.resolveRestBaseUrl();
     }
 
     /**

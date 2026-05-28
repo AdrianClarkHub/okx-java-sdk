@@ -2,6 +2,7 @@ package io.github.adrianclarkhub.okx.core.http;
 
 import io.github.adrianclarkhub.okx.core.config.OkxHttpConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxProxyConfig;
+import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 import okhttp3.Authenticator;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
@@ -26,6 +27,7 @@ public final class OkxHttpClients {
      */
     public static OkHttpClient create(OkxHttpConfig httpConfig) {
         OkxHttpConfig actualConfig = httpConfig == null ? new OkxHttpConfig() : httpConfig;
+        validate(actualConfig);
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(actualConfig.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .readTimeout(actualConfig.getReadTimeoutMillis(), TimeUnit.MILLISECONDS)
@@ -39,6 +41,30 @@ public final class OkxHttpClients {
             }
         }
         return builder.build();
+    }
+
+    private static void validate(OkxHttpConfig httpConfig) {
+        if (httpConfig.getConnectTimeoutMillis() <= 0) {
+            throw new OkxConfigurationException("OKX HTTP connect timeout must be greater than 0.");
+        }
+        if (httpConfig.getReadTimeoutMillis() <= 0) {
+            throw new OkxConfigurationException("OKX HTTP read timeout must be greater than 0.");
+        }
+        if (httpConfig.getWriteTimeoutMillis() <= 0) {
+            throw new OkxConfigurationException("OKX HTTP write timeout must be greater than 0.");
+        }
+        if (httpConfig.getMaxRetries() < 0) {
+            throw new OkxConfigurationException("OKX HTTP max retries must not be negative.");
+        }
+        OkxProxyConfig proxyConfig = httpConfig.getProxy();
+        if (proxyConfig != null && proxyConfig.isEnabled()) {
+            if (proxyConfig.getHost() == null || proxyConfig.getHost().trim().isEmpty()) {
+                throw new OkxConfigurationException("OKX HTTP proxy host is required when proxy is enabled.");
+            }
+            if (proxyConfig.getPort() <= 0 || proxyConfig.getPort() > 65535) {
+                throw new OkxConfigurationException("OKX HTTP proxy port must be between 1 and 65535 when proxy is enabled.");
+            }
+        }
     }
 
     private static Authenticator proxyAuthenticator(OkxProxyConfig proxyConfig) {

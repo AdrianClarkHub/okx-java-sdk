@@ -2,6 +2,7 @@ package io.github.adrianclarkhub.okx.core.config;
 
 import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
 import io.github.adrianclarkhub.okx.core.enums.UnknownEnumStrategyEnum;
+import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 
 import java.util.Properties;
 
@@ -191,13 +192,13 @@ public final class OkxConfigBinder {
             config.setHttp(http);
         }
         if ("connect-timeout-millis".equals(path)) {
-            http.setConnectTimeoutMillis(Integer.parseInt(value));
+            http.setConnectTimeoutMillis(parseInteger("okx.http.connect-timeout-millis", value));
         } else if ("read-timeout-millis".equals(path)) {
-            http.setReadTimeoutMillis(Integer.parseInt(value));
+            http.setReadTimeoutMillis(parseInteger("okx.http.read-timeout-millis", value));
         } else if ("write-timeout-millis".equals(path)) {
-            http.setWriteTimeoutMillis(Integer.parseInt(value));
+            http.setWriteTimeoutMillis(parseInteger("okx.http.write-timeout-millis", value));
         } else if ("max-retries".equals(path)) {
-            http.setMaxRetries(Integer.parseInt(value));
+            http.setMaxRetries(parseInteger("okx.http.max-retries", value));
         } else if (path.startsWith("proxy.")) {
             applyProxyKey(http, path.substring("proxy.".length()), value);
         }
@@ -214,7 +215,7 @@ public final class OkxConfigBinder {
         } else if ("host".equals(path)) {
             proxy.setHost(value);
         } else if ("port".equals(path)) {
-            proxy.setPort(Integer.parseInt(value));
+            proxy.setPort(parseInteger("okx.http.proxy.port", value));
         } else if ("username".equals(path)) {
             proxy.setUsername(value);
         } else if ("password".equals(path)) {
@@ -281,5 +282,13 @@ public final class OkxConfigBinder {
             return UnknownEnumStrategyEnum.THROW_EXCEPTION;
         }
         return UnknownEnumStrategyEnum.USE_UNKNOWN;
+    }
+
+    private static int parseInteger(String propertyName, String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new OkxConfigurationException("Invalid integer value for " + propertyName + ": " + value, e);
+        }
     }
 }

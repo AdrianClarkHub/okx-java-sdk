@@ -76,6 +76,7 @@ class StatusClientTest {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <T> OkxRestResponse<T> get(String path, Map<String, String> queryParams, TypeReference<OkxRestResponse<T>> typeReference) {
             this.path = path;
             this.queryParams = queryParams;
