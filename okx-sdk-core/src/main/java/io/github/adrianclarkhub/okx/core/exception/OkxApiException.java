@@ -1,5 +1,9 @@
 package io.github.adrianclarkhub.okx.core.exception;
 
+import io.github.adrianclarkhub.okx.core.error.OkxErrorClassificationEnum;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorCodeCatalog;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorCodeInfo;
+
 /**
  * OKX API 响应异常。
  *
@@ -19,6 +23,8 @@ public class OkxApiException extends OkxException {
 
     private final String requestPath;
 
+    private final OkxErrorCodeInfo errorCodeInfo;
+
     /**
      * 创建 OKX API 响应异常。
      *
@@ -36,6 +42,7 @@ public class OkxApiException extends OkxException {
         this.okxMessage = okxMessage;
         this.httpStatus = httpStatus;
         this.requestPath = requestPath;
+        this.errorCodeInfo = OkxErrorCodeCatalog.find(rawCode).orElse(null);
     }
 
     /**
@@ -56,6 +63,7 @@ public class OkxApiException extends OkxException {
         this.okxMessage = okxMessage;
         this.httpStatus = httpStatus;
         this.requestPath = requestPath;
+        this.errorCodeInfo = OkxErrorCodeCatalog.find(rawCode).orElse(null);
     }
 
     /**
@@ -110,6 +118,27 @@ public class OkxApiException extends OkxException {
      */
     public String getRequestPath() {
         return requestPath;
+    }
+
+    /**
+     * 获取错误码目录项。
+     *
+     * @return 错误码目录项，未知错误码返回 null
+     */
+    public OkxErrorCodeInfo getErrorCodeInfo() {
+        return errorCodeInfo;
+    }
+
+    /**
+     * 获取 SDK 错误分类。
+     *
+     * @return SDK 错误分类，未知错误码返回 null
+     */
+    public OkxErrorClassificationEnum getErrorClassification() {
+        if (errorCodeInfo == null) {
+            return null;
+        }
+        return errorCodeInfo.getClassification();
     }
 
     private static String parseMainCode(String rawCode) {

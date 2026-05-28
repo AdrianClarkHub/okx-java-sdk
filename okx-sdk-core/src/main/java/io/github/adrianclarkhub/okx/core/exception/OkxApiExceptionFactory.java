@@ -1,8 +1,10 @@
 package io.github.adrianclarkhub.okx.core.exception;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorClassificationEnum;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorCodeCatalog;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorCodeInfo;
+
+import java.util.Optional;
 
 /**
  * OKX API 异常工厂。
@@ -10,22 +12,6 @@ import java.util.Set;
  * <p>根据 OKX 错误码和 HTTP 状态码创建更具体的 SDK 异常类型。</p>
  */
 public final class OkxApiExceptionFactory {
-
-    private static final Set<String> AUTH_CODES = new HashSet<>(Arrays.asList(
-            "50100", "50101", "50102", "50103", "50104", "50105"
-    ));
-
-    private static final Set<String> RATE_LIMIT_CODES = new HashSet<>(Arrays.asList(
-            "50011", "50013", "50040", "50061"
-    ));
-
-    private static final Set<String> VALIDATION_CODES = new HashSet<>(Arrays.asList(
-            "50000", "50002", "50006", "50014", "50015", "50016", "50024", "50025"
-    ));
-
-    private static final Set<String> SERVER_CODES = new HashSet<>(Arrays.asList(
-            "50001", "50026"
-    ));
 
     private OkxApiExceptionFactory() {
     }
@@ -41,37 +27,42 @@ public final class OkxApiExceptionFactory {
      */
     public static OkxApiException create(String rawCode, String okxMessage, Integer httpStatus, String requestPath) {
         String mainCode = parseMainCode(rawCode);
-        String message = buildMessage(rawCode, okxMessage, httpStatus, requestPath);
+        Optional<OkxErrorCodeInfo> errorCodeInfo = OkxErrorCodeCatalog.find(rawCode);
+        OkxErrorClassificationEnum classification = errorCodeInfo
+                .map(OkxErrorCodeInfo::getClassification)
+                .orElseGet(() -> fallbackClassification(mainCode, httpStatus));
+        String messageEnUs = errorCodeInfo.map(OkxErrorCodeInfo::getMessageEnUs).orElse(null);
+        String message = buildMessage(rawCode, okxMessage, messageEnUs, httpStatus, requestPath);
 
-        if (isAuthError(mainCode, httpStatus)) {
+        if (OkxErrorClassificationEnum.AUTHENTICATION.equals(classification)) {
             return new OkxAuthException(message, rawCode, okxMessage, httpStatus, requestPath);
         }
-        if (isRateLimitError(mainCode, httpStatus)) {
+        if (OkxErrorClassificationEnum.RATE_LIMIT.equals(classification)) {
             return new OkxRateLimitException(message, rawCode, okxMessage, httpStatus, requestPath);
         }
-        if (isValidationError(mainCode, httpStatus)) {
+        if (OkxErrorClassificationEnum.VALIDATION.equals(classification)) {
             return new OkxValidationException(message, rawCode, okxMessage, httpStatus, requestPath);
         }
-        if (isServerError(mainCode, httpStatus)) {
+        if (OkxErrorClassificationEnum.SERVER.equals(classification)) {
             return new OkxServerException(message, rawCode, okxMessage, httpStatus, requestPath);
         }
         return new OkxBusinessException(message, rawCode, okxMessage, httpStatus, requestPath);
     }
 
-    private static boolean isAuthError(String mainCode, Integer httpStatus) {
-        return AUTH_CODES.contains(mainCode) || Integer.valueOf(401).equals(httpStatus) || Integer.valueOf(403).equals(httpStatus);
-    }
-
-    private static boolean isRateLimitError(String mainCode, Integer httpStatus) {
-        return RATE_LIMIT_CODES.contains(mainCode) || Integer.valueOf(429).equals(httpStatus);
-    }
-
-    private static boolean isValidationError(String mainCode, Integer httpStatus) {
-        return VALIDATION_CODES.contains(mainCode) || Integer.valueOf(400).equals(httpStatus);
-    }
-
-    private static boolean isServerError(String mainCode, Integer httpStatus) {
-        return SERVER_CODES.contains(mainCode) || isHttpServerError(httpStatus);
+    private static OkxErrorClassificationEnum fallbackClassification(String mainCode, Integer httpStatus) {
+        if (Integer.valueOf(401).equals(httpStatus) || Integer.valueOf(403).equals(httpStatus)) {
+            return OkxErrorClassificationEnum.AUTHENTICATION;
+        }
+        if (Integer.valueOf(429).equals(httpStatus)) {
+            return OkxErrorClassificationEnum.RATE_LIMIT;
+        }
+        if (Integer.valueOf(400).equals(httpStatus) || Integer.valueOf(405).equals(httpStatus) || Integer.valueOf(410).equals(httpStatus)) {
+            return OkxErrorClassificationEnum.VALIDATION;
+        }
+        if ("50001".equals(mainCode) || "50026".equals(mainCode) || isHttpServerError(httpStatus)) {
+            return OkxErrorClassificationEnum.SERVER;
+        }
+        return OkxErrorClassificationEnum.BUSINESS;
     }
 
     private static boolean isHttpServerError(Integer httpStatus) {
@@ -89,7 +80,7 @@ public final class OkxApiExceptionFactory {
         return rawCode.substring(0, index);
     }
 
-    private static String buildMessage(String rawCode, String okxMessage, Integer httpStatus, String requestPath) {
+    private static String buildMessage(String rawCode, String okxMessage, String messageEnUs, Integer httpStatus, String requestPath) {
         StringBuilder builder = new StringBuilder("OKX API request failed");
         if (rawCode != null && !rawCode.isEmpty()) {
             builder.append(". code=").append(rawCode);
@@ -102,6 +93,8 @@ public final class OkxApiExceptionFactory {
         }
         if (okxMessage != null && !okxMessage.isEmpty()) {
             builder.append(", message=").append(okxMessage);
+        } else if (messageEnUs != null && !messageEnUs.isEmpty()) {
+            builder.append(", message=").append(messageEnUs);
         }
         return builder.toString();
     }

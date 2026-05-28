@@ -1,8 +1,10 @@
 package io.github.adrianclarkhub.okx.core.exception;
 
+import io.github.adrianclarkhub.okx.core.error.OkxErrorClassificationEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,6 +29,8 @@ class OkxApiExceptionFactoryTest {
 
         assertInstanceOf(OkxAuthException.class, exception, "Code 50102 should be classified as authentication error.");
         assertEquals("50102", exception.getOkxCode(), "Authentication error code should be preserved.");
+        assertEquals(OkxErrorClassificationEnum.AUTHENTICATION, exception.getErrorClassification(),
+                "Catalog classification should be preserved.");
     }
 
     /**
@@ -91,5 +95,29 @@ class OkxApiExceptionFactoryTest {
         assertInstanceOf(OkxBusinessException.class, exception, "HTTP 200 with non-zero OKX code should be classified as business error.");
         assertEquals("51008", exception.getOkxCode(), "Main OKX code should be parsed from raw code.");
         assertEquals("1000", exception.getOkxSubCode(), "Sub OKX code should be parsed from raw code.");
+        assertEquals("交易类", exception.getErrorCodeInfo().getSection(), "Catalog section should be attached.");
+    }
+
+    /**
+     * 验证即使 HTTP 状态未传入，目录中的错误分类仍会生效。
+     */
+    @Test
+    void shouldUseCatalogClassificationWhenHttpStatusIsMissing() {
+        OkxApiException exception = OkxApiExceptionFactory.create(
+                "50000",
+                "",
+                null,
+                "/api/v5/trade/order"
+        );
+
+        assertInstanceOf(OkxValidationException.class, exception, "Catalog code 50000 should be classified as validation.");
+        assertTrue(exception.getMessage().contains("Body for POST request cannot be empty."),
+                "Exception message should use official English catalog metadata when OKX message is empty.");
+        assertFalse(exception.getMessage().contains("POST请求的body不能为空"),
+                "Exception message should not expose Chinese catalog metadata.");
+        assertTrue(exception.getErrorCodeInfo().getMessageZhCn().contains("POST请求的body不能为空"),
+                "Chinese catalog metadata should remain available from error code info.");
+        assertEquals("Body for POST request cannot be empty.", exception.getErrorCodeInfo().getMessageEnUs(),
+                "English catalog message should be available from error code info.");
     }
 }

@@ -1,5 +1,6 @@
 package io.github.adrianclarkhub.okx.core.exception;
 
+import io.github.adrianclarkhub.okx.core.error.OkxErrorClassificationEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +34,8 @@ class OkxApiExceptionTest {
         assertEquals("Insufficient balance.", exception.getOkxMessage(), "Original OKX message should be preserved.");
         assertEquals(200, exception.getHttpStatus(), "HTTP status should be preserved even when OKX code means failure.");
         assertEquals("/api/v5/trade/order", exception.getRequestPath(), "Request path should be preserved for troubleshooting.");
+        assertEquals(OkxErrorClassificationEnum.BUSINESS, exception.getErrorClassification(),
+                "Catalog classification should be attached to exception.");
     }
 
     /**

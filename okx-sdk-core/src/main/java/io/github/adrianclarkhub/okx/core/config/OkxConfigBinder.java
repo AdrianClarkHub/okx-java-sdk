@@ -63,8 +63,20 @@ public final class OkxConfigBinder {
         applyEnv(config, "OKX_SECRET_KEY", "secret-key");
         applyEnv(config, "OKX_PASSPHRASE", "passphrase");
         applyEnv(config, "OKX_LIVE_ENABLED", "live.enabled");
-        applyEnv(config, "OKX_REST_BASE_URL", "endpoints.rest-base-url");
         applyEnv(config, "OKX_LIVE_TESTS", "live.enabled");
+        applyEnv(config, "OKX_REST_BASE_URL", "endpoints.rest-base-url");
+        applyEnv(config, "OKX_WS_PUBLIC_URL", "endpoints.ws-public-url");
+        applyEnv(config, "OKX_WS_PRIVATE_URL", "endpoints.ws-private-url");
+        applyEnv(config, "OKX_WS_BUSINESS_URL", "endpoints.ws-business-url");
+        applyEnv(config, "OKX_HTTP_CONNECT_TIMEOUT_MILLIS", "http.connect-timeout-millis");
+        applyEnv(config, "OKX_HTTP_READ_TIMEOUT_MILLIS", "http.read-timeout-millis");
+        applyEnv(config, "OKX_HTTP_WRITE_TIMEOUT_MILLIS", "http.write-timeout-millis");
+        applyEnv(config, "OKX_HTTP_MAX_RETRIES", "http.max-retries");
+        applyEnv(config, "OKX_PROXY_ENABLED", "http.proxy.enabled");
+        applyEnv(config, "OKX_PROXY_HOST", "http.proxy.host");
+        applyEnv(config, "OKX_PROXY_PORT", "http.proxy.port");
+        applyEnv(config, "OKX_PROXY_USERNAME", "http.proxy.username");
+        applyEnv(config, "OKX_PROXY_PASSWORD", "http.proxy.password");
         config.normalize();
     }
 
@@ -137,6 +149,14 @@ public final class OkxConfigBinder {
         }
         if (path.startsWith("endpoints.")) {
             applyEndpointKey(config, path.substring("endpoints.".length()), value);
+            return;
+        }
+        if (path.startsWith("rest.")) {
+            applyRestAliasKey(config, path.substring("rest.".length()), value);
+            return;
+        }
+        if (path.startsWith("websocket.")) {
+            applyWebSocketAliasKey(config, path.substring("websocket.".length()), value);
             return;
         }
         if (path.startsWith("live.")) {
@@ -216,6 +236,22 @@ public final class OkxConfigBinder {
             endpoints.setWsPrivateUrl(value);
         } else if ("ws-business-url".equals(path)) {
             endpoints.setWsBusinessUrl(value);
+        }
+    }
+
+    private static void applyRestAliasKey(OkxConfig config, String path, String value) {
+        if ("base-url".equals(path)) {
+            applyEndpointKey(config, "rest-base-url", value);
+        }
+    }
+
+    private static void applyWebSocketAliasKey(OkxConfig config, String path, String value) {
+        if ("public-url".equals(path) || "ws-public-url".equals(path)) {
+            applyEndpointKey(config, "ws-public-url", value);
+        } else if ("private-url".equals(path) || "ws-private-url".equals(path)) {
+            applyEndpointKey(config, "ws-private-url", value);
+        } else if ("business-url".equals(path) || "ws-business-url".equals(path)) {
+            applyEndpointKey(config, "ws-business-url", value);
         }
     }
 
