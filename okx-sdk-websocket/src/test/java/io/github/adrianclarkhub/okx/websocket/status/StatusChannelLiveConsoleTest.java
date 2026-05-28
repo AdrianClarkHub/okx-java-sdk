@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxConfigLoader;
 import io.github.adrianclarkhub.okx.core.config.OkxProxyConfig;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
@@ -18,14 +17,13 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Status WebSocket 频道公网 Live Test。
@@ -47,30 +45,20 @@ class StatusChannelLiveConsoleTest {
 
     @Test
     void shouldSubscribeStatusChannelFromOkxPublicWebSocket() throws Exception {
+        printLiveConfig();
         StatusWebSocketListener listener = new StatusWebSocketListener();
-        WebSocket webSocket;
-        try {
-            webSocket = newHttpClient()
-                    .newWebSocketBuilder()
-                    .connectTimeout(CONNECT_TIMEOUT)
-                    .buildAsync(URI.create(OKX_CONFIG.resolveWsPublicUrl()), listener)
-                    .get(CONNECT_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
-        } catch (ExecutionException | TimeoutException e) {
-            Assumptions.abort("OKX live WebSocket unavailable this run: " + e.getMessage());
-            return;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            Assumptions.abort("OKX live WebSocket interrupted this run: " + e.getMessage());
-            return;
-        }
+        WebSocket webSocket = newHttpClient()
+                .newWebSocketBuilder()
+                .connectTimeout(CONNECT_TIMEOUT)
+                .buildAsync(URI.create(OKX_CONFIG.resolveWsPublicUrl()), listener)
+                .get(CONNECT_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
 
         try {
             webSocket.sendText(client.subscribeJson("1512"), true)
                     .get(CONNECT_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
             boolean subscribed = listener.awaitSubscribe(SUBSCRIBE_TIMEOUT);
             if (!subscribed && listener.getFailure() != null) {
-                Assumptions.abort("OKX live WebSocket failed this run: " + listener.getFailure());
-                return;
+                fail("OKX live WebSocket failed this run: " + listener.getFailure());
             }
 
             assertTrue(subscribed, "Live status channel should acknowledge subscription.");
@@ -101,6 +89,16 @@ class StatusChannelLiveConsoleTest {
             return OkxConfigLoader.load();
         }
         return OkxConfigLoader.loadFromClasspath(LOCAL_LIVE_CONFIG);
+    }
+
+    private static void printLiveConfig() {
+        OkxProxyConfig proxy = OKX_CONFIG.getHttp() == null ? null : OKX_CONFIG.getHttp().getProxy();
+        System.out.println("OKX live WebSocket URL: " + OKX_CONFIG.resolveWsPublicUrl());
+        if (proxy == null || !proxy.isEnabled()) {
+            System.out.println("OKX live proxy: disabled");
+            return;
+        }
+        System.out.println("OKX live proxy: " + proxy.getHost() + ":" + proxy.getPort());
     }
 
     private static HttpClient newHttpClient() {
