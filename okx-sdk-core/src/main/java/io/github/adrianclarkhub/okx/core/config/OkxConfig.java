@@ -29,6 +29,8 @@ public class OkxConfig {
 
     private OkxEndpointConfig endpoints;
 
+    private OkxWebSocketConfig webSocket;
+
     private OkxLiveConfig live;
 
     private Map<String, OkxAccountConfig> accounts;
@@ -41,6 +43,7 @@ public class OkxConfig {
         this.unknownEnumStrategy = UnknownEnumStrategyEnum.USE_UNKNOWN;
         this.http = new OkxHttpConfig();
         this.endpoints = new OkxEndpointConfig();
+        this.webSocket = new OkxWebSocketConfig();
         this.live = new OkxLiveConfig();
         this.accounts = new LinkedHashMap<>();
     }
@@ -211,6 +214,24 @@ public class OkxConfig {
     }
 
     /**
+     * 获取 WebSocket 客户端配置。
+     *
+     * @return WebSocket 客户端配置
+     */
+    public OkxWebSocketConfig getWebSocket() {
+        return webSocket;
+    }
+
+    /**
+     * 设置 WebSocket 客户端配置。
+     *
+     * @param webSocket WebSocket 客户端配置
+     */
+    public void setWebSocket(OkxWebSocketConfig webSocket) {
+        this.webSocket = webSocket;
+    }
+
+    /**
      * 获取 Live 测试配置。
      *
      * @return Live 测试配置
@@ -262,6 +283,24 @@ public class OkxConfig {
      */
     public String resolveWsPublicUrl() {
         return endpoints.getWsPublicUrl();
+    }
+
+    /**
+     * 解析 WebSocket 私有频道地址。
+     *
+     * @return WebSocket 私有频道地址
+     */
+    public String resolveWsPrivateUrl() {
+        return endpoints.getWsPrivateUrl();
+    }
+
+    /**
+     * 解析 WebSocket 业务频道地址。
+     *
+     * @return WebSocket 业务频道地址
+     */
+    public String resolveWsBusinessUrl() {
+        return endpoints.getWsBusinessUrl();
     }
 
     /**

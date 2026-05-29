@@ -1,8 +1,11 @@
 package io.github.adrianclarkhub.okx.websocket.common;
 
+import io.github.adrianclarkhub.okx.core.exception.OkxApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class OkxWebSocketProtocolClientTest {
 
@@ -41,5 +44,25 @@ class OkxWebSocketProtocolClientTest {
 
         assertEquals("channel-conn-count-error", event.getEvent(), "Event should be parsed.");
         assertEquals("30", event.getConnCount(), "Connection count should be parsed.");
+    }
+
+    @Test
+    void shouldParseErrorEventAsApiException() {
+        OkxWebSocketProtocolClient client = new OkxWebSocketProtocolClient();
+
+        OkxApiException exception = client.parseErrorEvent(
+                "{\"event\":\"error\",\"code\":\"60012\",\"msg\":\"Invalid request\"}");
+
+        assertNotNull(exception, "WebSocket error event should become API exception.");
+        assertEquals("60012", exception.getRawCode(), "Error code should be preserved.");
+        assertEquals("Invalid request", exception.getOkxMessage(), "Error message should be preserved.");
+    }
+
+    @Test
+    void shouldIgnoreNonErrorEventWhenParsingError() {
+        OkxWebSocketProtocolClient client = new OkxWebSocketProtocolClient();
+
+        assertNull(client.parseErrorEvent("{\"event\":\"subscribe\",\"arg\":{\"channel\":\"status\"}}"),
+                "Non-error event should not become exception.");
     }
 }

@@ -27,6 +27,9 @@ class OkxConfigBinderTest {
         properties.setProperty("okx.endpoints.ws-public-url", "wss://example.okx.com/ws/v5/public");
         properties.setProperty("okx.live.enabled", "true");
         properties.setProperty("okx.http.connect-timeout-millis", "15000");
+        properties.setProperty("okx.websocket.heartbeat-interval-millis", "20000");
+        properties.setProperty("okx.websocket.reconnect-delay-millis", "3000");
+        properties.setProperty("okx.websocket.max-reconnect-attempts", "5");
         properties.setProperty("okx.http.proxy.enabled", "true");
         properties.setProperty("okx.http.proxy.host", "127.0.0.1");
         properties.setProperty("okx.http.proxy.port", "7890");
@@ -41,6 +44,12 @@ class OkxConfigBinderTest {
                 "WebSocket public URL should be bound.");
         assertTrue(config.isLiveTestsEnabled(), "Live test flag should be bound.");
         assertEquals(15000, config.getHttp().getConnectTimeoutMillis(), "HTTP timeout should be bound.");
+        assertEquals(20000L, config.getWebSocket().getHeartbeatIntervalMillis(),
+                "WebSocket heartbeat interval should be bound.");
+        assertEquals(3000L, config.getWebSocket().getReconnectDelayMillis(),
+                "WebSocket reconnect delay should be bound.");
+        assertEquals(5, config.getWebSocket().getMaxReconnectAttempts(),
+                "WebSocket reconnect attempts should be bound.");
         assertTrue(config.getHttp().getProxy().isEnabled(), "Proxy should be bound.");
         assertEquals("127.0.0.1", config.getHttp().getProxy().getHost(), "Proxy host should be bound.");
         assertEquals(7890, config.getHttp().getProxy().getPort(), "Proxy port should be bound.");

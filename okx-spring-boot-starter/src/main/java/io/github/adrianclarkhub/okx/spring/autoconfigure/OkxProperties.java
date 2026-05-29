@@ -6,6 +6,7 @@ import io.github.adrianclarkhub.okx.core.config.OkxEndpointConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxHttpConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxLiveConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxProxyConfig;
+import io.github.adrianclarkhub.okx.core.config.OkxWebSocketConfig;
 import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
 import io.github.adrianclarkhub.okx.core.enums.UnknownEnumStrategyEnum;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -41,6 +42,8 @@ public class OkxProperties {
 
     private EndpointProperties endpoints = new EndpointProperties();
 
+    private WebSocketProperties websocket = new WebSocketProperties();
+
     private LiveProperties live = new LiveProperties();
 
     /**
@@ -64,6 +67,7 @@ public class OkxProperties {
         config.setPassphrase(passphrase);
         config.setHttp(http.toOkxHttpConfig());
         config.setEndpoints(endpoints.toOkxEndpointConfig());
+        config.setWebSocket(websocket.toOkxWebSocketConfig());
         config.setLive(live.toOkxLiveConfig());
         config.setAccounts(toAccountMap());
         config.normalize();
@@ -173,6 +177,14 @@ public class OkxProperties {
 
     public void setEndpoints(EndpointProperties endpoints) {
         this.endpoints = endpoints;
+    }
+
+    public WebSocketProperties getWebsocket() {
+        return websocket;
+    }
+
+    public void setWebsocket(WebSocketProperties websocket) {
+        this.websocket = websocket;
     }
 
     public LiveProperties getLive() {
@@ -422,6 +434,50 @@ public class OkxProperties {
 
         public void setWsBusinessUrl(String wsBusinessUrl) {
             this.wsBusinessUrl = wsBusinessUrl;
+        }
+    }
+
+    /**
+     * WebSocket 客户端配置属性。
+     */
+    public static class WebSocketProperties {
+
+        private long heartbeatIntervalMillis = 25000L;
+
+        private long reconnectDelayMillis = 5000L;
+
+        private int maxReconnectAttempts = 3;
+
+        public OkxWebSocketConfig toOkxWebSocketConfig() {
+            OkxWebSocketConfig webSocketConfig = new OkxWebSocketConfig();
+            webSocketConfig.setHeartbeatIntervalMillis(heartbeatIntervalMillis);
+            webSocketConfig.setReconnectDelayMillis(reconnectDelayMillis);
+            webSocketConfig.setMaxReconnectAttempts(maxReconnectAttempts);
+            return webSocketConfig;
+        }
+
+        public long getHeartbeatIntervalMillis() {
+            return heartbeatIntervalMillis;
+        }
+
+        public void setHeartbeatIntervalMillis(long heartbeatIntervalMillis) {
+            this.heartbeatIntervalMillis = heartbeatIntervalMillis;
+        }
+
+        public long getReconnectDelayMillis() {
+            return reconnectDelayMillis;
+        }
+
+        public void setReconnectDelayMillis(long reconnectDelayMillis) {
+            this.reconnectDelayMillis = reconnectDelayMillis;
+        }
+
+        public int getMaxReconnectAttempts() {
+            return maxReconnectAttempts;
+        }
+
+        public void setMaxReconnectAttempts(int maxReconnectAttempts) {
+            this.maxReconnectAttempts = maxReconnectAttempts;
         }
     }
 

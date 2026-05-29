@@ -25,6 +25,10 @@ okx.http.proxy.port=7890
 okx.http.proxy.username=YOUR_PROXY_USERNAME
 okx.http.proxy.password=YOUR_PROXY_PASSWORD
 
+okx.websocket.heartbeat-interval-millis=25000
+okx.websocket.reconnect-delay-millis=5000
+okx.websocket.max-reconnect-attempts=3
+
 okx.endpoints.rest-base-url=https://www.okx.com
 okx.endpoints.ws-public-url=wss://ws.okx.com:8443/ws/v5/public
 okx.endpoints.ws-private-url=wss://ws.okx.com:8443/ws/v5/private

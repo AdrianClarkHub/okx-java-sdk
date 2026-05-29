@@ -31,6 +31,11 @@ okx:
       username: YOUR_PROXY_USERNAME
       password: YOUR_PROXY_PASSWORD
 
+  websocket:
+    heartbeat-interval-millis: 25000
+    reconnect-delay-millis: 5000
+    max-reconnect-attempts: 3
+
   endpoints:
     rest-base-url: https://www.okx.com
     ws-public-url: wss://ws.okx.com:8443/ws/v5/public

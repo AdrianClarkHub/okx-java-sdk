@@ -5,17 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxConfigLoader;
 import io.github.adrianclarkhub.okx.core.config.OkxProxyConfig;
+import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketClient;
+import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketListener;
+import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketSession;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
-import java.net.InetSocketAddress;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.WebSocket;
 import java.time.Duration;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,15 +43,11 @@ class StatusChannelLiveConsoleTest {
     void shouldSubscribeStatusChannelFromOkxPublicWebSocket() throws Exception {
         printLiveConfig();
         StatusWebSocketListener listener = new StatusWebSocketListener();
-        WebSocket webSocket = newHttpClient()
-                .newWebSocketBuilder()
-                .connectTimeout(CONNECT_TIMEOUT)
-                .buildAsync(URI.create(OKX_CONFIG.resolveWsPublicUrl()), listener)
-                .get(CONNECT_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
+        OkxWebSocketSession session = new OkxWebSocketClient(OKX_CONFIG).publicSession(listener);
+        session.start().get(CONNECT_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
 
         try {
-            webSocket.sendText(client.subscribeJson("1512"), true)
-                    .get(CONNECT_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
+            session.registerAndSend(client.subscribeJson("1512"));
             boolean subscribed = listener.awaitSubscribe(SUBSCRIBE_TIMEOUT);
             if (!subscribed && listener.getFailure() != null) {
                 fail("OKX live WebSocket failed this run: " + listener.getFailure());
@@ -71,7 +63,7 @@ class StatusChannelLiveConsoleTest {
             System.out.println("WebSocket URL: " + OKX_CONFIG.resolveWsPublicUrl());
             System.out.println("Subscribe event: " + listener.getSubscribeEvent());
         } finally {
-            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "test complete");
+            session.close();
         }
     }
 
@@ -101,17 +93,7 @@ class StatusChannelLiveConsoleTest {
         System.out.println("OKX live proxy: " + proxy.getHost() + ":" + proxy.getPort());
     }
 
-    private static HttpClient newHttpClient() {
-        HttpClient.Builder builder = HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT);
-        OkxProxyConfig proxy = OKX_CONFIG.getHttp() == null ? null : OKX_CONFIG.getHttp().getProxy();
-        if (proxy != null && proxy.isEnabled() && proxy.getHost() != null && !proxy.getHost().isEmpty()
-                && proxy.getPort() > 0) {
-            builder.proxy(ProxySelector.of(new InetSocketAddress(proxy.getHost(), proxy.getPort())));
-        }
-        return builder.build();
-    }
-
-    private static final class StatusWebSocketListener implements WebSocket.Listener {
+    private static final class StatusWebSocketListener implements OkxWebSocketListener {
 
         private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -124,23 +106,14 @@ class StatusChannelLiveConsoleTest {
         private final AtomicReference<Throwable> failure = new AtomicReference<>();
 
         @Override
-        public void onOpen(WebSocket webSocket) {
-            webSocket.request(1);
+        public void onText(io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketConnection connection, String text) {
+            messageBuffer.append(text);
+            handleMessage(messageBuffer.toString());
+            messageBuffer.setLength(0);
         }
 
         @Override
-        public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
-            messageBuffer.append(data);
-            if (last) {
-                handleMessage(messageBuffer.toString());
-                messageBuffer.setLength(0);
-            }
-            webSocket.request(1);
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public void onError(WebSocket webSocket, Throwable error) {
+        public void onError(io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketConnection connection, Throwable error) {
             failure.compareAndSet(null, error);
             subscribeLatch.countDown();
         }

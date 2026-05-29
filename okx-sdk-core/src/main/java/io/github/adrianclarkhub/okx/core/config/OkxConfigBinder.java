@@ -69,6 +69,9 @@ public final class OkxConfigBinder {
         applyEnv(config, "OKX_WS_PUBLIC_URL", "endpoints.ws-public-url");
         applyEnv(config, "OKX_WS_PRIVATE_URL", "endpoints.ws-private-url");
         applyEnv(config, "OKX_WS_BUSINESS_URL", "endpoints.ws-business-url");
+        applyEnv(config, "OKX_WS_HEARTBEAT_INTERVAL_MILLIS", "websocket.heartbeat-interval-millis");
+        applyEnv(config, "OKX_WS_RECONNECT_DELAY_MILLIS", "websocket.reconnect-delay-millis");
+        applyEnv(config, "OKX_WS_MAX_RECONNECT_ATTEMPTS", "websocket.max-reconnect-attempts");
         applyEnv(config, "OKX_HTTP_CONNECT_TIMEOUT_MILLIS", "http.connect-timeout-millis");
         applyEnv(config, "OKX_HTTP_READ_TIMEOUT_MILLIS", "http.read-timeout-millis");
         applyEnv(config, "OKX_HTTP_WRITE_TIMEOUT_MILLIS", "http.write-timeout-millis");
@@ -253,6 +256,23 @@ public final class OkxConfigBinder {
             applyEndpointKey(config, "ws-private-url", value);
         } else if ("business-url".equals(path) || "ws-business-url".equals(path)) {
             applyEndpointKey(config, "ws-business-url", value);
+        } else {
+            applyWebSocketKey(config, path, value);
+        }
+    }
+
+    private static void applyWebSocketKey(OkxConfig config, String path, String value) {
+        OkxWebSocketConfig webSocket = config.getWebSocket();
+        if (webSocket == null) {
+            webSocket = new OkxWebSocketConfig();
+            config.setWebSocket(webSocket);
+        }
+        if ("heartbeat-interval-millis".equals(path)) {
+            webSocket.setHeartbeatIntervalMillis(parseLong("okx.websocket.heartbeat-interval-millis", value));
+        } else if ("reconnect-delay-millis".equals(path)) {
+            webSocket.setReconnectDelayMillis(parseLong("okx.websocket.reconnect-delay-millis", value));
+        } else if ("max-reconnect-attempts".equals(path)) {
+            webSocket.setMaxReconnectAttempts(parseInteger("okx.websocket.max-reconnect-attempts", value));
         }
     }
 
@@ -289,6 +309,14 @@ public final class OkxConfigBinder {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             throw new OkxConfigurationException("Invalid integer value for " + propertyName + ": " + value, e);
+        }
+    }
+
+    private static long parseLong(String propertyName, String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new OkxConfigurationException("Invalid long value for " + propertyName + ": " + value, e);
         }
     }
 }

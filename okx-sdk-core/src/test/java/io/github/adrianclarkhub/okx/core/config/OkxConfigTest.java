@@ -26,6 +26,7 @@ class OkxConfigTest {
         assertEquals(UnknownEnumStrategyEnum.USE_UNKNOWN, config.getUnknownEnumStrategy(), "Default unknown enum strategy should use UNKNOWN.");
         assertNotNull(config.getHttp(), "Default HTTP config should be created.");
         assertNotNull(config.getEndpoints(), "Default endpoint config should be created.");
+        assertNotNull(config.getWebSocket(), "Default WebSocket config should be created.");
         assertNotNull(config.getLive(), "Default live config should be created.");
         assertNotNull(config.getAccounts(), "Default account map should be created.");
         assertTrue(config.getAccounts().isEmpty(), "Default account map should be empty.");
@@ -94,6 +95,15 @@ class OkxConfigTest {
         assertEquals(50000, config.getWriteTimeoutMillis(), "Configured write timeout should be preserved.");
         assertEquals(2, config.getMaxRetries(), "Configured max retries should be preserved.");
         assertSame(proxy, config.getProxy(), "Configured proxy should be preserved.");
+    }
+
+    @Test
+    void shouldCreateDefaultWebSocketConfig() {
+        OkxWebSocketConfig config = new OkxWebSocketConfig();
+
+        assertEquals(25000L, config.getHeartbeatIntervalMillis(), "Default heartbeat interval should be 25000 ms.");
+        assertEquals(5000L, config.getReconnectDelayMillis(), "Default reconnect delay should be 5000 ms.");
+        assertEquals(3, config.getMaxReconnectAttempts(), "Default max reconnect attempts should be three.");
     }
 
     @Test

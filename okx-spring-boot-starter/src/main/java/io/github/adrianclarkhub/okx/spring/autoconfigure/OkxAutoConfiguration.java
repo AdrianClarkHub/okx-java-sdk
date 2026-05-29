@@ -5,6 +5,7 @@ import io.github.adrianclarkhub.okx.rest.common.OkxRestClient;
 import io.github.adrianclarkhub.okx.rest.common.OkxRestClients;
 import io.github.adrianclarkhub.okx.rest.status.StatusClient;
 import io.github.adrianclarkhub.okx.rest.support.SupportClient;
+import io.github.adrianclarkhub.okx.websocket.common.OkxWebSocketClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -41,6 +42,18 @@ public class OkxAutoConfiguration {
     @ConditionalOnMissingBean
     public OkxRestClient okxRestClient(OkxConfig okxConfig) {
         return OkxRestClients.create(okxConfig);
+    }
+
+    /**
+     * 注册 WebSocket 底层客户端 Bean。
+     *
+     * @param okxConfig SDK 根配置
+     * @return WebSocket 底层客户端
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public OkxWebSocketClient okxWebSocketClient(OkxConfig okxConfig) {
+        return new OkxWebSocketClient(okxConfig);
     }
 
     /**
