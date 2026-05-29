@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * OKX 错误码目录测试。
  *
- * <p>验证 14 错误码文档生成的 SDK 目录可以完整加载和查询。</p>
+ * <p>验证 12 错误码文档生成的 SDK 目录可以完整加载和查询。</p>
  */
 class OkxErrorCodeCatalogTest {
 
@@ -92,8 +92,8 @@ class OkxErrorCodeCatalogTest {
 
     @Test
     void shouldFindWebSocketErrorAndCloseFrame() {
-        Optional<OkxErrorCodeInfo> webSocketError = OkxErrorCodeCatalog.find("60007");
-        Optional<OkxErrorCodeInfo> closeFrame = OkxErrorCodeCatalog.find("4004");
+        Optional<OkxErrorCodeInfo> webSocketError = OkxErrorCodeCatalog.find("60007", OkxErrorTransportEnum.WEBSOCKET);
+        Optional<OkxErrorCodeInfo> closeFrame = OkxErrorCodeCatalog.find("4004", OkxErrorTransportEnum.WEBSOCKET);
 
         assertTrue(webSocketError.isPresent(), "WebSocket error code 60007 should exist.");
         assertEquals(OkxErrorTransportEnum.WEBSOCKET, webSocketError.get().getTransport(),
@@ -103,6 +103,16 @@ class OkxErrorCodeCatalogTest {
         assertTrue(closeFrame.isPresent(), "WebSocket close frame 4004 should exist.");
         assertEquals(OkxErrorClassificationEnum.WEBSOCKET_CLOSE, closeFrame.get().getClassification(),
                 "Close frame should use close frame classification.");
+    }
+
+    @Test
+    void shouldFilterErrorCodesByTransport() {
+        assertTrue(OkxErrorCodeCatalog.find("50014", OkxErrorTransportEnum.REST_API).isPresent(),
+                "REST code should be found when REST transport is requested.");
+        assertFalse(OkxErrorCodeCatalog.find("50014", OkxErrorTransportEnum.WEBSOCKET).isPresent(),
+                "REST-only code should not be returned for WebSocket transport.");
+        assertTrue(OkxErrorCodeCatalog.findAll("60007", OkxErrorTransportEnum.REST_API).isEmpty(),
+                "WebSocket-only code should not be returned for REST transport.");
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.github.adrianclarkhub.okx.websocket.common;
 
 import io.github.adrianclarkhub.okx.core.exception.OkxApiException;
+import io.github.adrianclarkhub.okx.core.exception.OkxWebSocketCloseException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,6 +57,28 @@ class OkxWebSocketProtocolClientTest {
         assertNotNull(exception, "WebSocket error event should become API exception.");
         assertEquals("60012", exception.getRawCode(), "Error code should be preserved.");
         assertEquals("Invalid request", exception.getOkxMessage(), "Error message should be preserved.");
+    }
+
+    @Test
+    void shouldParseDocumentedCloseFrameAsApiException() {
+        OkxWebSocketProtocolClient client = new OkxWebSocketProtocolClient();
+
+        OkxApiException exception = client.parseCloseFrame(4004, "Connection count limit exceeded.");
+
+        assertNotNull(exception, "Documented close frame should become API exception.");
+        assertEquals("4004", exception.getRawCode(), "Close frame code should be preserved.");
+        assertEquals("Connection count limit exceeded.", exception.getOkxMessage(),
+                "Close frame reason should be preserved.");
+        assertEquals(OkxWebSocketCloseException.class, exception.getClass(),
+                "Close frame should use WebSocket close exception.");
+    }
+
+    @Test
+    void shouldIgnoreUnknownCloseFrame() {
+        OkxWebSocketProtocolClient client = new OkxWebSocketProtocolClient();
+
+        assertNull(client.parseCloseFrame(1000, "Normal closure."),
+                "Unknown or normal close frame should not become OKX API exception.");
     }
 
     @Test

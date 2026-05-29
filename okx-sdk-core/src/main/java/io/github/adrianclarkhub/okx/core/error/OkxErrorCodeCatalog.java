@@ -47,6 +47,23 @@ public final class OkxErrorCodeCatalog {
     }
 
     /**
+     * 按错误码和来源协议查找第一个目录项。
+     *
+     * <p>REST API、WebSocket 事件和 WebSocket 关闭帧可能复用相同数字码。调用链已知来源协议时应优先使用该方法。</p>
+     *
+     * @param rawCode OKX 原始错误码
+     * @param transport 来源协议
+     * @return 错误码目录项
+     */
+    public static Optional<OkxErrorCodeInfo> find(String rawCode, OkxErrorTransportEnum transport) {
+        List<OkxErrorCodeInfo> items = findAll(rawCode, transport);
+        if (items.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(items.get(0));
+    }
+
+    /**
      * 按错误码查找所有目录项。
      *
      * <p>部分 OKX 错误码在文档中有多个提示文案，该方法保留全部条目。</p>
@@ -71,6 +88,27 @@ public final class OkxErrorCodeCatalog {
             }
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * 按错误码和来源协议查找所有目录项。
+     *
+     * @param rawCode OKX 原始错误码
+     * @param transport 来源协议
+     * @return 不可变目录列表
+     */
+    public static List<OkxErrorCodeInfo> findAll(String rawCode, OkxErrorTransportEnum transport) {
+        List<OkxErrorCodeInfo> items = findAll(rawCode);
+        if (transport == null || items.isEmpty()) {
+            return items;
+        }
+        List<OkxErrorCodeInfo> filtered = new ArrayList<>();
+        for (OkxErrorCodeInfo item : items) {
+            if (transport.equals(item.getTransport())) {
+                filtered.add(item);
+            }
+        }
+        return Collections.unmodifiableList(filtered);
     }
 
     /**

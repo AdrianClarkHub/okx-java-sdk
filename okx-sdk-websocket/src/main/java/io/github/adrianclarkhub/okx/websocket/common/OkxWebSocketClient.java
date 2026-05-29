@@ -4,6 +4,7 @@ import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxHttpConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxProxyConfig;
 import io.github.adrianclarkhub.okx.core.config.OkxWebSocketConfig;
+import io.github.adrianclarkhub.okx.core.exception.OkxApiException;
 import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 import io.github.adrianclarkhub.okx.core.exception.OkxWebSocketException;
 
@@ -247,7 +248,12 @@ public class OkxWebSocketClient {
 
         @Override
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
-            delegate.onClose(connection(webSocket), statusCode, reason);
+            OkxWebSocketConnection currentConnection = connection(webSocket);
+            OkxApiException closeException = protocolClient.parseCloseFrame(statusCode, reason);
+            if (closeException != null) {
+                delegate.onError(currentConnection, closeException);
+            }
+            delegate.onClose(currentConnection, statusCode, reason);
             return CompletableFuture.completedFuture(null);
         }
 

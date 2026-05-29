@@ -1,6 +1,7 @@
 package io.github.adrianclarkhub.okx.core.exception;
 
 import io.github.adrianclarkhub.okx.core.error.OkxErrorClassificationEnum;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorTransportEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -119,5 +120,39 @@ class OkxApiExceptionFactoryTest {
                 "Chinese catalog metadata should remain available from error code info.");
         assertEquals("Body for POST request cannot be empty.", exception.getErrorCodeInfo().getMessageEnUs(),
                 "English catalog message should be available from error code info.");
+    }
+
+    @Test
+    void shouldCreateWebSocketCloseExceptionForDocumentedCloseFrame() {
+        OkxApiException exception = OkxApiExceptionFactory.create(
+                "4004",
+                "Connection count limit exceeded.",
+                null,
+                "websocket-close",
+                OkxErrorTransportEnum.WEBSOCKET
+        );
+
+        assertInstanceOf(OkxWebSocketCloseException.class, exception,
+                "Documented WebSocket close frame should use close frame exception.");
+        assertEquals(OkxErrorClassificationEnum.WEBSOCKET_CLOSE, exception.getErrorClassification(),
+                "Close frame classification should be preserved.");
+        assertEquals(OkxErrorTransportEnum.WEBSOCKET, exception.getErrorCodeInfo().getTransport(),
+                "WebSocket transport should be preserved.");
+    }
+
+    @Test
+    void shouldPreserveFallbackClassificationForUnknownHttpError() {
+        OkxApiException exception = OkxApiExceptionFactory.create(
+                "999999",
+                "Gateway failed.",
+                502,
+                "/api/v5/system/status",
+                OkxErrorTransportEnum.REST_API
+        );
+
+        assertInstanceOf(OkxServerException.class, exception,
+                "Unknown HTTP 5xx error should fall back to server exception.");
+        assertEquals(OkxErrorClassificationEnum.SERVER, exception.getErrorClassification(),
+                "Fallback classification should be available from exception.");
     }
 }

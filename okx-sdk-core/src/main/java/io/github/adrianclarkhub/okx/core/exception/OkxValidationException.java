@@ -1,5 +1,8 @@
 package io.github.adrianclarkhub.okx.core.exception;
 
+import io.github.adrianclarkhub.okx.core.error.OkxErrorCodeInfo;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorClassificationEnum;
+
 /**
  * OKX 参数校验异常。
  *
@@ -18,5 +21,15 @@ public class OkxValidationException extends OkxApiException {
      */
     public OkxValidationException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath) {
         super(message, rawCode, okxMessage, httpStatus, requestPath);
+    }
+
+    public OkxValidationException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath,
+                                  OkxErrorCodeInfo errorCodeInfo) {
+        super(message, rawCode, okxMessage, httpStatus, requestPath, errorCodeInfo);
+    }
+
+    public OkxValidationException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath,
+                                  OkxErrorCodeInfo errorCodeInfo, OkxErrorClassificationEnum errorClassification) {
+        super(message, rawCode, okxMessage, httpStatus, requestPath, errorCodeInfo, errorClassification);
     }
 }

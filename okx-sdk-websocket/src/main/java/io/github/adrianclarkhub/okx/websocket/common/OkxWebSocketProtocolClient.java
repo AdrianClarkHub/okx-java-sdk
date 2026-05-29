@@ -2,6 +2,10 @@ package io.github.adrianclarkhub.okx.websocket.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorClassificationEnum;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorCodeCatalog;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorCodeInfo;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorTransportEnum;
 import io.github.adrianclarkhub.okx.core.exception.OkxApiException;
 import io.github.adrianclarkhub.okx.core.exception.OkxApiExceptionFactory;
 import io.github.adrianclarkhub.okx.core.http.OkxObjectMappers;
@@ -38,9 +42,21 @@ public class OkxWebSocketProtocolClient {
             }
             String code = root.has("code") ? root.get("code").asText() : null;
             String msg = root.has("msg") ? root.get("msg").asText() : null;
-            return OkxApiExceptionFactory.create(code, msg, null, "websocket");
+            return OkxApiExceptionFactory.create(code, msg, null, "websocket", OkxErrorTransportEnum.WEBSOCKET);
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public OkxApiException parseCloseFrame(int statusCode, String reason) {
+        if (statusCode <= 0) {
+            return null;
+        }
+        String code = String.valueOf(statusCode);
+        OkxErrorCodeInfo closeFrame = OkxErrorCodeCatalog.find(code, OkxErrorTransportEnum.WEBSOCKET).orElse(null);
+        if (closeFrame == null || !OkxErrorClassificationEnum.WEBSOCKET_CLOSE.equals(closeFrame.getClassification())) {
+            return null;
+        }
+        return OkxApiExceptionFactory.create(code, reason, null, "websocket-close", OkxErrorTransportEnum.WEBSOCKET);
     }
 }

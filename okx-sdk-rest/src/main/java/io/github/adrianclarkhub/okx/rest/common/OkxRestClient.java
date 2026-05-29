@@ -9,6 +9,7 @@ import io.github.adrianclarkhub.okx.core.auth.OkxSigner;
 import io.github.adrianclarkhub.okx.core.auth.OkxTimestampProvider;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
+import io.github.adrianclarkhub.okx.core.error.OkxErrorTransportEnum;
 import io.github.adrianclarkhub.okx.core.exception.OkxApiExceptionFactory;
 import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 import io.github.adrianclarkhub.okx.core.exception.OkxNetworkException;
@@ -134,7 +135,7 @@ public class OkxRestClient {
                 if (!response.isSuccessful() || restResponse == null || !"0".equals(restResponse.getCode())) {
                     String code = restResponse == null ? null : restResponse.getCode();
                     String msg = restResponse == null ? body : restResponse.getMsg();
-                    throw OkxApiExceptionFactory.create(code, msg, response.code(), path);
+                    throw OkxApiExceptionFactory.create(code, msg, response.code(), path, OkxErrorTransportEnum.REST_API);
                 }
                 return restResponse;
             } catch (IOException e) {

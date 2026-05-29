@@ -25,6 +25,8 @@ public class OkxApiException extends OkxException {
 
     private final OkxErrorCodeInfo errorCodeInfo;
 
+    private final OkxErrorClassificationEnum errorClassification;
+
     /**
      * 创建 OKX API 响应异常。
      *
@@ -35,6 +37,27 @@ public class OkxApiException extends OkxException {
      * @param requestPath 请求路径
      */
     public OkxApiException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath) {
+        this(message, rawCode, okxMessage, httpStatus, requestPath, OkxErrorCodeCatalog.find(rawCode).orElse(null));
+    }
+
+    /**
+     * 创建 OKX API 响应异常。
+     *
+     * @param message 英文异常消息
+     * @param rawCode OKX 原始错误码
+     * @param okxMessage OKX 原始错误消息
+     * @param httpStatus HTTP 状态码
+     * @param requestPath 请求路径
+     * @param errorCodeInfo 错误码目录项
+     */
+    public OkxApiException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath,
+                           OkxErrorCodeInfo errorCodeInfo) {
+        this(message, rawCode, okxMessage, httpStatus, requestPath, errorCodeInfo,
+                errorCodeInfo == null ? null : errorCodeInfo.getClassification());
+    }
+
+    public OkxApiException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath,
+                           OkxErrorCodeInfo errorCodeInfo, OkxErrorClassificationEnum errorClassification) {
         super(message);
         this.rawCode = rawCode;
         this.okxCode = parseMainCode(rawCode);
@@ -42,7 +65,8 @@ public class OkxApiException extends OkxException {
         this.okxMessage = okxMessage;
         this.httpStatus = httpStatus;
         this.requestPath = requestPath;
-        this.errorCodeInfo = OkxErrorCodeCatalog.find(rawCode).orElse(null);
+        this.errorCodeInfo = errorCodeInfo;
+        this.errorClassification = errorClassification;
     }
 
     /**
@@ -56,6 +80,28 @@ public class OkxApiException extends OkxException {
      * @param cause 原始异常
      */
     public OkxApiException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath, Throwable cause) {
+        this(message, rawCode, okxMessage, httpStatus, requestPath, OkxErrorCodeCatalog.find(rawCode).orElse(null), cause);
+    }
+
+    /**
+     * 创建 OKX API 响应异常。
+     *
+     * @param message 英文异常消息
+     * @param rawCode OKX 原始错误码
+     * @param okxMessage OKX 原始错误消息
+     * @param httpStatus HTTP 状态码
+     * @param requestPath 请求路径
+     * @param errorCodeInfo 错误码目录项
+     * @param cause 原始异常
+     */
+    public OkxApiException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath,
+                           OkxErrorCodeInfo errorCodeInfo, Throwable cause) {
+        this(message, rawCode, okxMessage, httpStatus, requestPath, errorCodeInfo,
+                errorCodeInfo == null ? null : errorCodeInfo.getClassification(), cause);
+    }
+
+    public OkxApiException(String message, String rawCode, String okxMessage, Integer httpStatus, String requestPath,
+                           OkxErrorCodeInfo errorCodeInfo, OkxErrorClassificationEnum errorClassification, Throwable cause) {
         super(message, cause);
         this.rawCode = rawCode;
         this.okxCode = parseMainCode(rawCode);
@@ -63,7 +109,8 @@ public class OkxApiException extends OkxException {
         this.okxMessage = okxMessage;
         this.httpStatus = httpStatus;
         this.requestPath = requestPath;
-        this.errorCodeInfo = OkxErrorCodeCatalog.find(rawCode).orElse(null);
+        this.errorCodeInfo = errorCodeInfo;
+        this.errorClassification = errorClassification;
     }
 
     /**
@@ -135,10 +182,7 @@ public class OkxApiException extends OkxException {
      * @return SDK 错误分类，未知错误码返回 null
      */
     public OkxErrorClassificationEnum getErrorClassification() {
-        if (errorCodeInfo == null) {
-            return null;
-        }
-        return errorCodeInfo.getClassification();
+        return errorClassification;
     }
 
     private static String parseMainCode(String rawCode) {
