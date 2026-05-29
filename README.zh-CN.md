@@ -6,7 +6,7 @@
 
 ## 项目状态
 
-本项目目前处于初始化和设计阶段。
+本项目目前处于早期开发阶段，已完成基础配置、签名、REST 底层客户端、WebSocket 会话底座、Spring Boot 自动配置以及少量公共 API。
 
 目标是提供一个标准、可维护、适合 Maven 引入的 OKX Java SDK，覆盖 OKX REST API 和 WebSocket API。
 
@@ -79,6 +79,88 @@ Spring Boot 用户可优先使用：
 ```
 
 实际发布坐标会在首次公开发布 Maven 包前最终确认。
+
+## 快速开始
+
+### 普通 Java REST
+
+```java
+OkxConfig config = OkxConfigLoader.load();
+StatusClient statusClient = new StatusClient(OkxRestClients.create(config));
+
+List<StatusResponse> statusList = statusClient.getStatus();
+```
+
+### 普通 Java WebSocket
+
+```java
+OkxConfig config = OkxConfigLoader.load();
+StatusChannelClient statusChannelClient = new StatusChannelClient();
+
+OkxWebSocketSession session = new OkxWebSocketClient(config).publicSession(new OkxWebSocketListener() {
+    @Override
+    public void onText(OkxWebSocketConnection connection, String text) {
+        System.out.println(text);
+    }
+});
+
+session.start();
+session.registerAndSend(statusChannelClient.subscribeJson("status-example"));
+```
+
+### Spring Boot
+
+引入 `okx-spring-boot-starter` 后，在应用配置中声明 `okx.*`：
+
+```yaml
+okx:
+  environment: production
+  endpoints:
+    rest-base-url: https://www.okx.com
+    ws-public-url: wss://ws.okx.com:8443/ws/v5/public
+  http:
+    connect-timeout-millis: 10000
+    read-timeout-millis: 30000
+    write-timeout-millis: 30000
+    proxy:
+      enabled: false
+      host: 127.0.0.1
+      port: 7897
+  websocket:
+    heartbeat-interval-millis: 25000
+    reconnect-delay-millis: 5000
+    max-reconnect-attempts: 3
+```
+
+Starter 会自动注册：
+
+- `OkxConfig`
+- `OkxRestClient`
+- `OkxWebSocketClient`
+- `StatusClient`
+- `SupportClient`
+
+### 代理
+
+代理只在显式启用时生效：
+
+```properties
+okx.http.proxy.enabled=true
+okx.http.proxy.host=127.0.0.1
+okx.http.proxy.port=7897
+```
+
+REST 和 WebSocket 都复用同一套代理配置。代理启用后如果 `host` 为空或 `port` 不合法，SDK 会在创建客户端时直接抛出配置异常。
+
+## 当前覆盖范围
+
+当前已实现的主要能力：
+
+- 01 基础协议能力：配置、签名、时间戳、REST 鉴权、WebSocket 登录、代理、REST 重试、WebSocket session、心跳、重连、订阅恢复、错误事件转换。
+- 12 错误码/异常体系：错误码目录、异常分类、REST 错误转换。
+- 13 公告 Support：公告列表和公告类型接口。
+- 14 系统状态 Status：REST 状态接口和 WebSocket status 频道基础能力。
+
 
 ## Java 版本
 

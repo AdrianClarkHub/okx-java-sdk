@@ -6,7 +6,7 @@ Community maintained Java SDK for OKX API.
 
 ## Project Status
 
-This project is currently in the early initialization and design stage.
+This project is currently in early development. Core configuration, signing, REST base client, WebSocket session support, Spring Boot auto-configuration, and a small set of public APIs are already implemented.
 
 The goal is to provide a standard, maintainable, Maven-friendly Java SDK for OKX REST and WebSocket APIs.
 
@@ -79,6 +79,88 @@ Spring Boot users may use:
 ```
 
 Actual release coordinates will be finalized before the first public Maven release.
+
+## Quick Start
+
+### Plain Java REST
+
+```java
+OkxConfig config = OkxConfigLoader.load();
+StatusClient statusClient = new StatusClient(OkxRestClients.create(config));
+
+List<StatusResponse> statusList = statusClient.getStatus();
+```
+
+### Plain Java WebSocket
+
+```java
+OkxConfig config = OkxConfigLoader.load();
+StatusChannelClient statusChannelClient = new StatusChannelClient();
+
+OkxWebSocketSession session = new OkxWebSocketClient(config).publicSession(new OkxWebSocketListener() {
+    @Override
+    public void onText(OkxWebSocketConnection connection, String text) {
+        System.out.println(text);
+    }
+});
+
+session.start();
+session.registerAndSend(statusChannelClient.subscribeJson("status-example"));
+```
+
+### Spring Boot
+
+After adding `okx-spring-boot-starter`, configure `okx.*` in your application:
+
+```yaml
+okx:
+  environment: production
+  endpoints:
+    rest-base-url: https://www.okx.com
+    ws-public-url: wss://ws.okx.com:8443/ws/v5/public
+  http:
+    connect-timeout-millis: 10000
+    read-timeout-millis: 30000
+    write-timeout-millis: 30000
+    proxy:
+      enabled: false
+      host: 127.0.0.1
+      port: 7897
+  websocket:
+    heartbeat-interval-millis: 25000
+    reconnect-delay-millis: 5000
+    max-reconnect-attempts: 3
+```
+
+The starter registers:
+
+- `OkxConfig`
+- `OkxRestClient`
+- `OkxWebSocketClient`
+- `StatusClient`
+- `SupportClient`
+
+### Proxy
+
+Proxy is used only when explicitly enabled:
+
+```properties
+okx.http.proxy.enabled=true
+okx.http.proxy.host=127.0.0.1
+okx.http.proxy.port=7897
+```
+
+REST and WebSocket clients share the same proxy configuration. If proxy is enabled with an empty `host` or invalid `port`, the SDK fails fast with a configuration exception.
+
+## Current Coverage
+
+Implemented core areas:
+
+- 01 foundation protocol: configuration, signing, timestamps, REST authentication, WebSocket login, proxy, REST retry, WebSocket session, heartbeat, reconnect, subscription replay, and error event conversion.
+- 12 error code and exception model: error catalog, exception classification, REST error conversion.
+- 13 support announcements: announcement list and announcement type endpoints.
+- 14 system status: REST status endpoint and WebSocket status channel base support.
+
 
 ## Java Version
 
