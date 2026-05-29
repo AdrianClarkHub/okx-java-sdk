@@ -15,6 +15,8 @@ public class OkxAccountConfig {
 
     private String passphrase;
 
+    private Boolean simulated;
+
     /**
      * 创建默认账户配置。
      */
@@ -91,5 +93,23 @@ public class OkxAccountConfig {
      */
     public void setPassphrase(String passphrase) {
         this.passphrase = passphrase;
+    }
+
+    /**
+     * 获取账户是否使用模拟盘。
+     *
+     * @return 使用模拟盘返回 true，未单独配置时返回 null
+     */
+    public Boolean getSimulated() {
+        return simulated;
+    }
+
+    /**
+     * 设置账户是否使用模拟盘。
+     *
+     * @param simulated 是否使用模拟盘
+     */
+    public void setSimulated(Boolean simulated) {
+        this.simulated = simulated;
     }
 }

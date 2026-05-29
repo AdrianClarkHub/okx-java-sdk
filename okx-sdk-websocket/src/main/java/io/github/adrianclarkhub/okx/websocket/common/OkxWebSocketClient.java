@@ -7,6 +7,7 @@ import io.github.adrianclarkhub.okx.core.config.OkxWebSocketConfig;
 import io.github.adrianclarkhub.okx.core.exception.OkxApiException;
 import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 import io.github.adrianclarkhub.okx.core.exception.OkxWebSocketException;
+import io.github.adrianclarkhub.okx.core.http.OkxProxySupport;
 
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
@@ -168,6 +169,9 @@ public class OkxWebSocketClient {
         OkxProxyConfig proxy = httpConfig.getProxy();
         if (proxy != null && proxy.isEnabled()) {
             builder.proxy(ProxySelector.of(new InetSocketAddress(proxy.getHost(), proxy.getPort())));
+            if (OkxProxySupport.hasAuthentication(proxy)) {
+                builder.authenticator(OkxProxySupport.jdkAuthenticator(proxy));
+            }
         }
         return builder.build();
     }
@@ -183,15 +187,7 @@ public class OkxWebSocketClient {
         if (httpConfig.getConnectTimeoutMillis() <= 0) {
             throw new OkxConfigurationException("OKX WebSocket connect timeout must be greater than 0.");
         }
-        OkxProxyConfig proxy = httpConfig.getProxy();
-        if (proxy != null && proxy.isEnabled()) {
-            if (proxy.getHost() == null || proxy.getHost().trim().isEmpty()) {
-                throw new OkxConfigurationException("OKX WebSocket proxy host is required when proxy is enabled.");
-            }
-            if (proxy.getPort() <= 0 || proxy.getPort() > 65535) {
-                throw new OkxConfigurationException("OKX WebSocket proxy port must be between 1 and 65535 when proxy is enabled.");
-            }
-        }
+        OkxProxySupport.validate(httpConfig.getProxy(), "OKX WebSocket");
     }
 
     private static final class ListenerAdapter implements WebSocket.Listener {

@@ -7,6 +7,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -50,5 +51,15 @@ class StatusRequestTest {
 
         // Then：UNKNOWN 不应参与请求参数。
         assertFalse(queryParams.containsKey("state"), "Unknown state should not be sent as query param.");
+    }
+
+    @Test
+    void shouldReturnImmutableQueryParams() {
+        StatusRequest request = new StatusRequest(StatusMaintenanceStateEnum.COMPLETED);
+
+        Map<String, String> queryParams = request.toQueryParams();
+
+        assertThrows(UnsupportedOperationException.class, () -> queryParams.put("state", "ongoing"),
+                "Query params should not expose mutable internal state.");
     }
 }

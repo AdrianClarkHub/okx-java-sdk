@@ -334,6 +334,21 @@ public class OkxConfig {
         return live != null && live.isEnabled();
     }
 
+    /**
+     * 判断当前请求是否应使用 OKX 模拟盘头。
+     *
+     * <p>账户级配置优先于全局环境，未配置账户级 simulated 时回退到全局环境。</p>
+     *
+     * @return 使用模拟盘时返回 true
+     */
+    public boolean isSimulatedTradingEnabled() {
+        OkxAccountConfig account = getActiveAccount();
+        if (account != null && account.getSimulated() != null) {
+            return account.getSimulated();
+        }
+        return OkxEnvironmentEnum.DEMO.equals(environment);
+    }
+
     private boolean hasRootCredentials() {
         return apiKey != null && !apiKey.isEmpty()
                 && secretKey != null && !secretKey.isEmpty()
@@ -346,6 +361,7 @@ public class OkxConfig {
         account.setApiKey(apiKey);
         account.setSecretKey(secretKey);
         account.setPassphrase(passphrase);
+        account.setSimulated(OkxEnvironmentEnum.DEMO.equals(environment));
         return account;
     }
 }

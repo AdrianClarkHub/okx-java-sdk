@@ -183,8 +183,8 @@ public final class OkxConfigBinder {
             account.setSecretKey(value);
         } else if ("passphrase".equals(field)) {
             account.setPassphrase(value);
-        } else if ("simulated".equals(field) && Boolean.parseBoolean(value)) {
-            config.setEnvironment(OkxEnvironmentEnum.DEMO);
+        } else if ("simulated".equals(field)) {
+            account.setSimulated(Boolean.valueOf(Boolean.parseBoolean(value)));
         }
     }
 

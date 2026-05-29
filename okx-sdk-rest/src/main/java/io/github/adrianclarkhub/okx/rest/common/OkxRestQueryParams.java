@@ -2,6 +2,7 @@ package io.github.adrianclarkhub.okx.rest.common;
 
 import io.github.adrianclarkhub.okx.core.enums.OkxEnum;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -24,6 +25,6 @@ public class OkxRestQueryParams {
     }
 
     public Map<String, String> toMap() {
-        return values;
+        return Collections.unmodifiableMap(new LinkedHashMap<String, String>(values));
     }
 }

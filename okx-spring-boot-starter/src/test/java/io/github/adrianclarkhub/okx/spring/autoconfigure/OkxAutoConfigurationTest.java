@@ -26,6 +26,11 @@ class OkxAutoConfigurationTest {
                 .withPropertyValues(
                         "okx.environment=production",
                         "okx.endpoints.rest-base-url=https://www.okx.com",
+                        "okx.default-account=main",
+                        "okx.accounts.main.api-key=api-key",
+                        "okx.accounts.main.secret-key=secret-key",
+                        "okx.accounts.main.passphrase=passphrase",
+                        "okx.accounts.main.simulated=true",
                         "okx.websocket.heartbeat-interval-millis=20000",
                         "okx.live.enabled=false"
                 )
@@ -39,6 +44,8 @@ class OkxAutoConfigurationTest {
                             "REST base URL should be bound from okx.endpoints.rest-base-url.");
                     assertEquals(20000L, context.getBean(OkxConfig.class).getWebSocket().getHeartbeatIntervalMillis(),
                             "WebSocket heartbeat interval should be bound from okx.websocket.heartbeat-interval-millis.");
+                    assertEquals(Boolean.TRUE, context.getBean(OkxConfig.class).getActiveAccount().getSimulated(),
+                            "Account-level simulated flag should be bound.");
                 });
     }
 }

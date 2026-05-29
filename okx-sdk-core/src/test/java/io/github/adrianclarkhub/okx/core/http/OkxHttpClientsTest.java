@@ -51,4 +51,13 @@ class OkxHttpClientsTest {
         assertThrows(OkxConfigurationException.class, () -> OkxHttpClients.create(config),
                 "Negative retry count should fail fast.");
     }
+
+    @Test
+    void shouldDetectProxyAuthentication() {
+        OkxProxyConfig proxy = new OkxProxyConfig();
+        proxy.setUsername("proxy-user");
+
+        org.junit.jupiter.api.Assertions.assertTrue(OkxProxySupport.hasAuthentication(proxy),
+                "Proxy username should enable proxy authentication.");
+    }
 }

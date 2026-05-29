@@ -214,6 +214,7 @@ public class OkxProperties {
             account.setApiKey(apiKey);
             account.setSecretKey(secretKey);
             account.setPassphrase(passphrase);
+            account.setSimulated(simulated);
             return account;
         }
 

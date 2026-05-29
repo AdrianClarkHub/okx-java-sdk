@@ -39,6 +39,22 @@ class OkxWebSocketClientTest {
     }
 
     @Test
+    void shouldCreateHttpClientWithAuthenticatedProxy() {
+        OkxConfig config = new OkxConfig();
+        OkxProxyConfig proxy = new OkxProxyConfig();
+        proxy.setEnabled(true);
+        proxy.setHost("127.0.0.1");
+        proxy.setPort(7897);
+        proxy.setUsername("proxy-user");
+        proxy.setPassword("proxy-password");
+        config.getHttp().setProxy(proxy);
+
+        HttpClient httpClient = OkxWebSocketClient.createHttpClient(config);
+
+        assertNotNull(httpClient.authenticator().orElse(null), "WebSocket proxy authentication should be configured.");
+    }
+
+    @Test
     void shouldRejectInvalidWebSocketUrl() {
         OkxWebSocketClient client = new OkxWebSocketClient(new OkxConfig());
 

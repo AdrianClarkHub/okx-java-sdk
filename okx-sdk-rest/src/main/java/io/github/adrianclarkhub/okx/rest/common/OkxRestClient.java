@@ -8,7 +8,6 @@ import io.github.adrianclarkhub.okx.core.auth.OkxCredentials;
 import io.github.adrianclarkhub.okx.core.auth.OkxSigner;
 import io.github.adrianclarkhub.okx.core.auth.OkxTimestampProvider;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
-import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
 import io.github.adrianclarkhub.okx.core.error.OkxErrorTransportEnum;
 import io.github.adrianclarkhub.okx.core.exception.OkxApiExceptionFactory;
 import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
@@ -173,15 +172,18 @@ public class OkxRestClient {
         builder.header(OkxAuthHeaders.ACCESS_SIGN, sign);
         builder.header(OkxAuthHeaders.ACCESS_TIMESTAMP, timestamp);
         builder.header(OkxAuthHeaders.ACCESS_PASSPHRASE, credentials.getPassphrase());
-        if (OkxEnvironmentEnum.DEMO.equals(config.getEnvironment())) {
+        if (config.isSimulatedTradingEnabled()) {
             builder.header(OkxAuthHeaders.SIMULATED_TRADING, "1");
         }
     }
 
     private HttpUrl buildUrl(String path, Map<String, String> queryParams) {
+        if (path == null || path.trim().isEmpty() || !path.startsWith("/")) {
+            throw new OkxConfigurationException("OKX REST path must start with '/': " + path);
+        }
         HttpUrl base = HttpUrl.parse(baseUrl + path);
         if (base == null) {
-            throw new IllegalArgumentException("Invalid OKX REST URL: " + baseUrl + path);
+            throw new OkxConfigurationException("Invalid OKX REST URL: " + baseUrl + path);
         }
         HttpUrl.Builder builder = base.newBuilder();
         if (queryParams != null) {

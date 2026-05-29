@@ -36,7 +36,7 @@ public final class OkxHttpClients {
         OkxProxyConfig proxyConfig = actualConfig.getProxy();
         if (proxyConfig != null && proxyConfig.isEnabled()) {
             builder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyConfig.getHost(), proxyConfig.getPort())));
-            if (proxyConfig.getUsername() != null && !proxyConfig.getUsername().isEmpty()) {
+            if (OkxProxySupport.hasAuthentication(proxyConfig)) {
                 builder.proxyAuthenticator(proxyAuthenticator(proxyConfig));
             }
         }
@@ -56,15 +56,7 @@ public final class OkxHttpClients {
         if (httpConfig.getMaxRetries() < 0) {
             throw new OkxConfigurationException("OKX HTTP max retries must not be negative.");
         }
-        OkxProxyConfig proxyConfig = httpConfig.getProxy();
-        if (proxyConfig != null && proxyConfig.isEnabled()) {
-            if (proxyConfig.getHost() == null || proxyConfig.getHost().trim().isEmpty()) {
-                throw new OkxConfigurationException("OKX HTTP proxy host is required when proxy is enabled.");
-            }
-            if (proxyConfig.getPort() <= 0 || proxyConfig.getPort() > 65535) {
-                throw new OkxConfigurationException("OKX HTTP proxy port must be between 1 and 65535 when proxy is enabled.");
-            }
-        }
+        OkxProxySupport.validate(httpConfig.getProxy(), "OKX HTTP");
     }
 
     private static Authenticator proxyAuthenticator(OkxProxyConfig proxyConfig) {

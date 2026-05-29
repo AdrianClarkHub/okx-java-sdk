@@ -7,6 +7,7 @@ import io.github.adrianclarkhub.okx.core.auth.OkxSigner;
 import io.github.adrianclarkhub.okx.core.auth.OkxTimestampProvider;
 import io.github.adrianclarkhub.okx.core.config.OkxConfig;
 import io.github.adrianclarkhub.okx.core.enums.OkxEnvironmentEnum;
+import io.github.adrianclarkhub.okx.core.exception.OkxConfigurationException;
 import io.github.adrianclarkhub.okx.core.exception.OkxNetworkException;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
@@ -72,6 +73,28 @@ class OkxRestClientAuthTest {
                 "POST body should be JSON.");
         assertEquals("1", request.header(OkxAuthHeaders.SIMULATED_TRADING), "Demo requests should send simulated header.");
         assertAuthHeaders(request, "POST", "/api/v5/account/set-leverage", requestBody);
+    }
+
+    @Test
+    void shouldUseAccountLevelSimulatedFlagForPrivateRequest() throws Exception {
+        RecordingInterceptor interceptor = new RecordingInterceptor();
+        OkxConfig config = createConfig(OkxEnvironmentEnum.PRODUCTION);
+        config.getActiveAccount().setSimulated(true);
+        OkxRestClient client = createClient(interceptor, config);
+
+        client.postPrivate("/api/v5/account/set-leverage", "{}", responseType());
+
+        assertEquals("1", interceptor.getRequest().header(OkxAuthHeaders.SIMULATED_TRADING),
+                "Account-level simulated flag should enable simulated trading header.");
+    }
+
+    @Test
+    void shouldRejectInvalidRestPathAsSdkConfigurationException() {
+        OkxRestClient client = createClient(new RecordingInterceptor(), OkxEnvironmentEnum.PRODUCTION);
+
+        assertThrows(OkxConfigurationException.class,
+                () -> client.get("://bad-path", null, responseType()),
+                "Invalid REST path should use SDK configuration exception.");
     }
 
     @Test
